@@ -5,12 +5,15 @@ namespace Tests\Feature;
 use App\Models\AcademicYear;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
+use App\Models\AssessmentQuestion;
+use App\Models\AttemptAnswer;
 use App\Models\ClassTeacherAssignment;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\Enrollment;
 use App\Models\Organization;
 use App\Models\OrganizationClass;
+use App\Models\Question;
 use App\Models\StudentProfile;
 use App\Models\TeacherProfile;
 use App\Models\User;
@@ -80,13 +83,35 @@ class AssessmentTeacherSectionScopeTest extends TestCase
             'title' => 'Section-specific assessment', 'attempts_allowed' => 1,
             'status' => 'published', 'published_at' => now(), 'created_by' => $teacher->id,
         ]);
+        $rubric = [
+            ['id' => (string) Str::uuid(), 'label' => 'Reasoning', 'weight' => 50],
+            ['id' => (string) Str::uuid(), 'label' => 'Evidence', 'weight' => 50],
+        ];
+        $question = Question::create([
+            'organization_id' => $organization->id, 'course_id' => $course->id,
+            'prompt' => 'Explain the result.', 'type' => 'short_answer', 'difficulty' => 2,
+            'grading_rubric' => $rubric, 'created_by' => $teacher->id,
+        ]);
+        AssessmentQuestion::create([
+            'organization_id' => $organization->id, 'course_id' => $course->id,
+            'assessment_id' => $assessment->id, 'question_id' => $question->id,
+            'points' => 10, 'position' => 1,
+        ]);
         $attempts = [];
+        $answers = [];
         foreach ([[$assignedStudent, 7], [$otherStudent, 10]] as [$student, $score]) {
             $attempts[$student->id] = AssessmentAttempt::create([
                 'organization_id' => $organization->id, 'course_id' => $course->id,
                 'assessment_id' => $assessment->id, 'student_id' => $student->id, 'attempt_number' => 1,
-                'status' => 'submitted', 'review_status' => 'not_required', 'score' => $score, 'max_points' => 10,
-                'question_order' => [], 'started_at' => now()->subMinutes(10), 'submitted_at' => now(),
+                'status' => 'submitted', 'review_status' => 'pending', 'score' => $score, 'max_points' => 10,
+                'question_order' => [$question->id], 'started_at' => now()->subMinutes(10), 'submitted_at' => now(),
+            ]);
+            $answers[$student->id] = AttemptAnswer::create([
+                'organization_id' => $organization->id, 'course_id' => $course->id,
+                'assessment_id' => $assessment->id, 'attempt_id' => $attempts[$student->id]->id,
+                'question_id' => $question->id, 'selected_option_ids' => [],
+                'response_text' => $student->id === $assignedStudent->id ? 'Assigned response' : 'Other section response',
+                'is_correct' => null, 'points_awarded' => 0,
             ]);
         }
 
@@ -102,7 +127,7 @@ class AssessmentTeacherSectionScopeTest extends TestCase
             ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.student_id', $assignedStudent->id);
         $this->actingAs($teacher, 'sanctum')->getJson($assessmentUrl.'/analytics')
             ->assertOk()->assertJsonPath('data.attempt_count', 1)
-            ->assertJsonPath('data.completed_attempt_count', 1)->assertJsonPath('data.average_score_percent', 70);
+            ->assertJsonPath('data.completed_attempt_count', 1)->assertJsonPath('data.average_score_percent', null);
         $this->actingAs($teacher, 'sanctum')->getJson($assessmentUrl.'/attempts/'.$attempts[$assignedStudent->id]->id.'/review')
             ->assertOk()->assertJsonPath('data.attempt.student_code', 'AS-SEC-A1');
         $this->actingAs($teacher, 'sanctum')->getJson($assessmentUrl.'/attempts/'.$attempts[$otherStudent->id]->id.'/review')->assertNotFound();
@@ -118,5 +143,43 @@ class AssessmentTeacherSectionScopeTest extends TestCase
             ->assertJsonPath('data.completed_attempt_count', 0)->assertJsonPath('data.average_score_percent', null);
         $this->actingAs($teacher, 'sanctum')->get($assessmentUrl.'/grades/export'.$otherSectionFilter)
             ->assertOk()->assertDontSeeText('AS-SEC-B1')->assertDontSeeText('Section B Learner');
+
+        $gradeUrl = $base.'/courses/'.$course->id.'/assessments/'.$assessment->id
+            .'/attempts/'.$attempts[$assignedStudent->id]->id.'/answers/'.$question->id.'/grade';
+        $this->actingAs($teacher, 'sanctum')->putJson($gradeUrl, [
+            'rubric_scores' => [
+                ['criterion_id' => $rubric[0]['id'], 'score' => 80],
+                ['criterion_id' => $rubric[1]['id'], 'score' => 70],
+            ],
+            'feedback' => 'Clear reasoning with one detail to add.',
+        ])->assertOk()->assertJsonPath('data.points_awarded', 7.5)->assertJsonPath('data.review_status', 'reviewed');
+        $gradedAnswer = $answers[$assignedStudent->id]->fresh();
+        $this->assertSame($teacher->id, $gradedAnswer->graded_by);
+        $this->assertSame('Clear reasoning with one detail to add.', $gradedAnswer->grader_feedback);
+        $this->assertSame([
+            ['criterion_id' => $rubric[0]['id'], 'score' => 80],
+            ['criterion_id' => $rubric[1]['id'], 'score' => 70],
+        ], $gradedAnswer->rubric_scores);
+        $this->assertDatabaseHas('assessment_attempts', [
+            'id' => $attempts[$assignedStudent->id]->id, 'score' => 7.5, 'review_status' => 'reviewed',
+        ]);
+
+        $foreignGradeUrl = $base.'/courses/'.$course->id.'/assessments/'.$assessment->id
+            .'/attempts/'.$attempts[$otherStudent->id]->id.'/answers/'.$question->id.'/grade';
+        $this->actingAs($teacher, 'sanctum')->putJson($foreignGradeUrl, [
+            'rubric_scores' => [
+                ['criterion_id' => $rubric[0]['id'], 'score' => 100],
+                ['criterion_id' => $rubric[1]['id'], 'score' => 100],
+            ],
+            'feedback' => 'This must not be saved.',
+        ])->assertNotFound();
+
+        $this->assertDatabaseHas('attempt_answers', [
+            'id' => $answers[$otherStudent->id]->id, 'points_awarded' => 0,
+            'graded_by' => null, 'graded_at' => null, 'grader_feedback' => null, 'rubric_scores' => null,
+        ]);
+        $this->assertDatabaseHas('assessment_attempts', [
+            'id' => $attempts[$otherStudent->id]->id, 'score' => 10, 'review_status' => 'pending',
+        ]);
     }
 }
