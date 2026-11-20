@@ -58,6 +58,21 @@ class AssessmentTenantIsolationTest extends TestCase
         $this->assertDatabaseCount('assessment_attempts', 1);
     }
 
+    public function test_learner_can_resume_an_already_started_attempt_after_its_course_becomes_draft(): void
+    {
+        $workspace = $this->createAssessmentWorkspace('In Progress');
+        $attempt = $workspace['attempt']->forceFill(['status' => 'in_progress', 'submitted_at' => null]);
+        $attempt->save();
+        $base = '/api/v1/organizations/'.$workspace['organization']->id;
+        $this->actingAs($workspace['owner'], 'sanctum')->putJson($base.'/courses/'.$workspace['course']->id, [
+            'title' => $workspace['course']->title, 'status' => 'draft',
+        ])->assertOk()->assertJsonPath('data.status', 'draft');
+
+        $this->actingAs($workspace['learner'], 'sanctum')->postJson($base.'/assessments/'.$workspace['assessment']->id.'/attempts')
+            ->assertOk()->assertJsonPath('data.id', $attempt->id)->assertJsonPath('data.status', 'in_progress');
+        $this->assertDatabaseCount('assessment_attempts', 1);
+    }
+
     /** @return array{organization: Organization, owner: User, learner: User, course: Course, assessment: Assessment, attempt: AssessmentAttempt} */
     private function createAssessmentWorkspace(string $label): array
     {

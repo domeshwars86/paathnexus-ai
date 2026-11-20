@@ -4,9 +4,9 @@ Updated: 2026-11-20
 
 ## Milestone 0.245 — Revoke learner access when courses become drafts
 - **Finding:** A learner with a retained enrollment could start a published assessment by its known ID and receive a course live-session URL after a manager changed that course to draft. Learner-facing lists already hid the draft course, but the direct assessment and session paths did not recheck course status.
-- **Fix:** Require an active course when starting a published assessment, restrict learner live-session listings to active course enrollments, and reject direct meeting access for draft courses. Added regressions covering the supported active-to-draft transition, absent new attempt/access records, and the disappearing session.
-- **Verification:** Focused assessment and live-session tests passed (4 tests, 56 assertions); full Laravel suite passed (120 tests, 2,626 assertions); PHP syntax and diff checks passed.
-- **Limitations:** Retained enrollment and assessment history remain unchanged; only new attempts and learner session access are revoked. Hosted PostgreSQL and deployment verification remain pending.
+- **Fix:** Require an active course before creating a new assessment attempt, while allowing an already-started in-progress attempt to resume so learners can finish work they began. Restrict learner live-session listings to active course enrollments and reject direct meeting access for draft courses. Added regressions covering the supported active-to-draft transition, preserved in-progress work, absent new attempt/access records, and the disappearing session.
+- **Verification:** Focused assessment and live-session tests passed (5 tests, 58 assertions); full Laravel suite passed (121 tests, 2,632 assertions); PHP syntax and diff checks passed.
+- **Limitations:** Retained enrollment and assessment history remain unchanged; only new attempts and learner session access are revoked, while an already-started in-progress attempt can be resumed/submitted. Hosted PostgreSQL and deployment verification remain pending.
 - **Next:** Continue API tenant-scope and release-readiness audits, then verify hosted PostgreSQL and release gates.
 
 ## Milestone 0.244 — Enforce teacher course scope for AI tutor context
