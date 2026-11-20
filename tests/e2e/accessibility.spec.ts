@@ -162,6 +162,65 @@ test('manager announcements pass automated WCAG 2.2 AA checks on desktop and mob
   }
 });
 
+test('AI tutor and teacher assistant pass automated WCAG 2.2 AA checks', async ({ page }, testInfo) => {
+  const organizationId = 'accessibility-ai-workspace';
+  await page.addInitScript(() => {
+    sessionStorage.setItem('paathnexus.session-token', 'accessibility-ai-token');
+    sessionStorage.setItem('paathnexus.active-organization', 'accessibility-ai-workspace');
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const send = (data: unknown) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data }),
+    });
+    if (path.endsWith('/auth/me')) return send({
+      user: { name: 'Ari Educator', email: 'educator@example.test' },
+      organizations: [{
+        id: organizationId, name: 'Sample Academy', slug: 'sample-academy', type: 'school', role: 'teacher',
+        permissions: ['workspace.view', 'courses.view', 'courses.manage'], locale: 'en', timezone: 'Asia/Kolkata',
+      }],
+    });
+    if (path.endsWith('/dashboard')) return send({
+      active_students_count: 0, active_classes_count: 0, active_enrollments_count: 0,
+      unassigned_students_count: 0, pending_tasks_count: 0, latest_attendance_rate: null,
+      latest_attendance_class: null, latest_attendance_date: null, attendance_series: [],
+      classes: [], today_schedule: [], schedule_notice: null, schedule_weekday: 4, active_academic_year_id: null,
+    });
+    if (path.endsWith('/notifications')) return send({ notifications: [], unread_count: 0 });
+    if (path.endsWith(`/organizations/${organizationId}/courses`)) return send([]);
+    if (path.endsWith(`/organizations/${organizationId}/ai/tutor`)) return send({
+      answer: 'Fractions describe equal parts of a whole.', usage: { input_tokens: 5, output_tokens: 9 },
+    });
+    if (path.endsWith(`/organizations/${organizationId}/ai/teacher-assistant`)) return send({
+      draft: '1. Show a fraction with a simple diagram.\n2. Ask learners to compare two examples.',
+      human_review_required: true, usage: { input_tokens: 8, output_tokens: 12 },
+    });
+    return send([]);
+  });
+
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'Tools' }).getByRole('button', { name: /AI learning/i }).click();
+  await expect(page.getByRole('heading', { name: 'Ask your learning tutor' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Prepare a teaching draft' })).toBeVisible();
+  for (const viewport of responsiveViewports) {
+    await page.setViewportSize(viewport);
+    await expectNoAxeViolations(page, testInfo, `ai-learning-form-${viewport.name}`);
+  }
+
+  await page.getByLabel('Your question').fill('What are equivalent fractions?');
+  await page.getByRole('button', { name: 'Ask tutor' }).click();
+  await expect(page.getByText('Fractions describe equal parts of a whole.')).toBeVisible();
+  await page.getByLabel('Topic').fill('Equivalent fractions');
+  await page.getByRole('button', { name: 'Generate draft' }).click();
+  await expect(page.getByLabel('Generated teaching draft')).toContainText('simple diagram');
+  for (const viewport of responsiveViewports) {
+    await page.setViewportSize(viewport);
+    await expectNoAxeViolations(page, testInfo, `ai-learning-results-${viewport.name}`);
+  }
+});
+
 test('learner dashboard passes automated WCAG 2.2 AA checks on desktop and mobile', async ({ page }, testInfo) => {
   const organizationId = 'accessibility-learner-fixture';
   await page.addInitScript(() => {

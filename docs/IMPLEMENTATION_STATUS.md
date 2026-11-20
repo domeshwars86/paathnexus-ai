@@ -2,10 +2,10 @@
 
 Updated: 2026-11-20
 
-## Milestone 0.246 — Scan manager announcements for accessibility
-- **Finding:** The manager announcement lifecycle had functional browser coverage, but the accessibility suite did not scan its creation form, audience controls, scheduled-publish control, or announcement cards.
-- **Fix:** Added a synthetic owner announcement fixture and desktop/mobile axe scans for the manager announcements screen.
-- **Verification:** `npx playwright test tests/e2e/accessibility.spec.ts` passed (9 scenarios, 18 desktop/mobile viewport scans); `git diff --check` passed.
+## Milestone 0.246 — Scan manager announcements and AI learning for accessibility
+- **Finding:** The manager announcement lifecycle and educator AI learning forms had functional browser coverage, but the accessibility suite did not scan their forms, controls, and generated content states.
+- **Fix:** Added synthetic owner and educator fixtures with desktop/mobile axe scans for announcements and AI tutor/teaching-draft forms and results.
+- **Verification:** `npx playwright test tests/e2e/accessibility.spec.ts` passed (10 scenarios, 24 desktop/mobile surface scans); `git diff --check` passed.
 - **Limitations:** Automated scans still cover representative workflows rather than every role, dialog, and interaction state. Manual screen-reader, cross-browser, and physical-device checks remain pending.
 - **Next:** Extend axe coverage to the remaining teacher/admin workflows and dialogs, then continue API authorization and release-readiness checks.
 
