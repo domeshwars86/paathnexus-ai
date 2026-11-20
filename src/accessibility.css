@@ -9,6 +9,7 @@
 }
 
 .app-shell .workspace-copy span,
+.app-shell .sidebar-foot,
 .app-shell .nav-label,
 .app-shell .tools-label,
 .app-shell .nav-item:not(.nav-active),
@@ -21,6 +22,15 @@
 .app-shell .stat-card .neutral,
 .app-shell .stat-caption,
 .app-shell .stat-foot > span,
+.app-shell .student-overview-card > span,
+.app-shell .assignment-card-heading small,
+.app-shell .submission-card small,
+.app-shell .invoice-heading small,
+.app-shell .academic-form label,
+.app-shell .roster-list small,
+.app-shell .attendance-dialog .attendance-mark-list small,
+.app-shell .attendance-dialog > p,
+.app-shell .task-cancel,
 .app-shell .eyebrow,
 .app-shell .panel-heading p,
 .app-shell .chart-total,

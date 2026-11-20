@@ -2,12 +2,19 @@
 
 Updated: 2026-11-20
 
+## Milestone 0.240 — Scan learner and educator attendance states
+- **Finding:** The initial axe pass covered public/auth screens and the owner dashboard, but not a learner dashboard or an educator’s attendance-entry dialog. These states exposed additional low-contrast attendance and roster details.
+- **Fix:** Extended automated checks to the learner dashboard and attendance dialog at desktop and mobile sizes. Darkened student attendance summaries, roster identifiers, form labels, dialog instructions, and neutral controls to maintain text contrast without changing surface colors or layout.
+- **Verification:** The accessibility suite passed (5 scenarios, 10 viewport scans); all Chromium tests passed (43 tests); `npm run build` passed; the production PWA offline test passed (1 test).
+- **Limitations:** These scans cover public home, sign-in, owner dashboard, learner dashboard, and educator attendance dialog. Guardian views, other teacher/admin modules, remaining dialogs, manual screen-reader checks, and physical devices remain pending.
+- **Next:** Scan guardian learning/billing views and assessment authoring/review states, then continue API authorization and release-readiness checks.
+
 ## Milestone 0.239 — Add automated responsive accessibility scans
 - **Finding:** Responsive, keyboard, and selected contrast checks existed, but automated WCAG rule scans did not cover the public page, sign-in, or an authenticated workspace dashboard. The first scan found low-contrast workspace metadata, nav labels, and dashboard captions.
 - **Fix:** Added axe-core Playwright checks for public home, sign-in, and the authenticated owner dashboard at 1280×900 and 375×812. Darkened workspace neutral text colors to meet scan thresholds; kept public/auth colors that already passed. The accessibility spec runs in the existing CI Chromium suite. Also replaced a stale hard-coded announcement date in the browser fixture with a future Asia/Kolkata date.
 - **Verification:** Axe scenarios passed (3 tests, 6 viewport scans); full Chromium suite passed (41 tests); PWA offline test passed (1 test); Vitest passed (12 tests); `npm run build` passed; npm audit found 0 vulnerabilities.
 - **Limitations:** Automated checks cover these three page states at two widths, not every module, dialog, role, or intermediate interaction. Physical screen-reader, keyboard-only, and mobile-device reviews remain pending.
-- **Next:** Extend scans to high-traffic role-specific module states and dialogs, then continue the remaining API authorization, PostgreSQL, and release-readiness checks.
+- **Next:** Add learner and educator dialog scans, then continue the remaining API authorization, PostgreSQL, and release-readiness checks.
 
 ## Milestone 0.238 — Verify section-scoped assessment grading
 - **Finding:** Teacher section scope was covered for assessment lists, analytics, review, and exports, but the short-answer grading mutation had no regression proving an out-of-section attempt could not be changed.
