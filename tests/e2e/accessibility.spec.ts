@@ -221,6 +221,57 @@ test('AI tutor and teacher assistant pass automated WCAG 2.2 AA checks', async (
   }
 });
 
+test('platform admin usage dashboard passes automated WCAG 2.2 AA checks', async ({ page }, testInfo) => {
+  const organizationId = 'accessibility-platform-admin';
+  await page.addInitScript(() => {
+    sessionStorage.setItem('paathnexus.session-token', 'accessibility-platform-admin-token');
+    sessionStorage.setItem('paathnexus.active-organization', 'accessibility-platform-admin');
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const send = (data: unknown, extra: Record<string, unknown> = {}) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data, ...extra }),
+    });
+    if (path.endsWith('/auth/me')) return send({
+      user: { name: 'Platform Admin', email: 'platform@example.test', is_platform_admin: true },
+      organizations: [{ id: organizationId, name: 'Admin Workspace', slug: 'admin-workspace', type: 'school', role: 'owner', permissions: ['workspace.view'], locale: 'en', timezone: 'Asia/Kolkata' }],
+    });
+    if (path.endsWith('/dashboard')) return send({
+      active_students_count: 0, active_classes_count: 0, active_enrollments_count: 0,
+      unassigned_students_count: 0, pending_tasks_count: 0, latest_attendance_rate: null,
+      latest_attendance_class: null, latest_attendance_date: null, attendance_series: [],
+      classes: [], today_schedule: [], schedule_notice: null, schedule_weekday: 4, active_academic_year_id: null,
+    });
+    if (path.endsWith('/notifications')) return send({ notifications: [], unread_count: 0 });
+    if (path.endsWith('/platform/usage')) return send({
+      organization_count: 3, active_organization_count: 2, suspended_organization_count: 1,
+      active_membership_count: 4, active_student_count: 3, active_course_count: 5, active_subscription_count: 2,
+    });
+    if (path.endsWith('/platform/usage/history')) return send({ days: 90, snapshots: [
+      { snapshot_date: '2026-11-18', organization_count: 2, active_organization_count: 1, suspended_organization_count: 1, active_membership_count: 2, active_student_count: 1, active_course_count: 2, active_subscription_count: 1 },
+      { snapshot_date: '2026-11-19', organization_count: 3, active_organization_count: 2, suspended_organization_count: 1, active_membership_count: 4, active_student_count: 3, active_course_count: 5, active_subscription_count: 2 },
+    ] });
+    if (path.endsWith('/platform/organizations')) return send([], { meta: { total: 0, current_page: 1, last_page: 1 } });
+    if (path.endsWith('/platform/audit-logs')) return send([], { meta: { total: 0, current_page: 1, last_page: 1 } });
+    if (path.endsWith('/platform/feature-flags')) return send([{
+      key: 'ai_tutor', label: 'AI Tutor', description: 'Allow the AI tutor.', enabled: true,
+      default_enabled: true, updated_at: null, updated_by_id: null,
+    }]);
+    return send([]);
+  });
+
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'Tools' }).getByRole('button', { name: 'Platform admin' }).click();
+  await expect(page.getByRole('heading', { name: 'Platform plans' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Daily platform snapshots' })).toBeVisible();
+  for (const viewport of responsiveViewports) {
+    await page.setViewportSize(viewport);
+    await expectNoAxeViolations(page, testInfo, `platform-admin-usage-${viewport.name}`);
+  }
+});
+
 test('learner dashboard passes automated WCAG 2.2 AA checks on desktop and mobile', async ({ page }, testInfo) => {
   const organizationId = 'accessibility-learner-fixture';
   await page.addInitScript(() => {
