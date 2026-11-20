@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend tests, responsive smoke, and production build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=moderate
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npm run test:e2e:pwa
+
+  api:
+    name: API migrations and feature tests (SQLite)
+    runs-on: ubuntu-latest
+    env:
+      DB_CONNECTION: sqlite
+      PAATHNEXUS_EXPECT_DB_CONNECTION: sqlite
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: composer audit --locked
+      - run: php artisan test --compact
+
+  api-postgres:
+    name: API migrations and feature tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: paathnexus_test
+          POSTGRES_USER: paathnexus
+          POSTGRES_PASSWORD: paathnexus-test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U paathnexus -d paathnexus_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: api
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: paathnexus_test
+      DB_USERNAME: paathnexus
+      DB_PASSWORD: paathnexus-test-password
+      PAATHNEXUS_EXPECT_DB_CONNECTION: pgsql
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_pgsql
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: composer audit --locked
+      - run: php artisan test --compact

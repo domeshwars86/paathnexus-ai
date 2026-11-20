@@ -1,0 +1,32 @@
+.workspace-picker{position:relative;margin:30px 0 29px}.workspace-switch{width:100%;margin:0;border:1px solid #edecf2;border-radius:11px;background:#fff;text-align:left;cursor:pointer;transition:border-color .15s,box-shadow .15s}.workspace-switch:hover,.workspace-switch[aria-expanded=true]{border-color:#d9d6f7;box-shadow:0 3px 10px #5548d80b}.workspace-menu{position:absolute;z-index:7;top:calc(100% + 7px);left:0;right:0;padding:5px;background:#fff;border:1px solid #e9e8f0;border-radius:10px;box-shadow:0 12px 30px #2927531a;display:grid;gap:2px}.workspace-menu>button{display:flex;align-items:center;gap:8px;width:100%;min-width:0;border:0;border-radius:7px;background:transparent;padding:8px;text-align:left}.workspace-menu>button:hover,.workspace-menu>button[aria-checked=true]{background:#f5f4ff}.workspace-menu-mark{height:27px;width:27px;display:grid;place-items:center;flex:none;border-radius:8px;background:#edf1ff;color:#5a55b8;font-size:10px;font-weight:700}.workspace-menu-copy{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}.workspace-menu-copy strong{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.workspace-menu-copy small{font-size:8px;color:#9899a9}.workspace-menu>button>svg{color:#5c51d1;flex:none}
+.custom-roles-panel { margin-top: 1.25rem; }
+.custom-role-editor { margin: 1rem 0 1.5rem; }
+.custom-role-permissions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem 1rem; border: 1px solid var(--line, #e5e7eb); border-radius: 14px; padding: 1rem; }
+.custom-role-permissions legend { padding: 0 .4rem; font-weight: 700; }
+.custom-role-permissions label { display: flex; align-items: flex-start; gap: .6rem; min-width: 0; font-weight: 500; }
+.custom-role-permissions input { margin-top: .2rem; accent-color: var(--accent, #635bff); }
+.custom-role-permissions .form-hint { grid-column: 1 / -1; }
+.custom-role-list { display: grid; gap: .55rem; margin-top: 1.3rem; }
+.custom-role-card,.custom-role-member { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border: 1px solid var(--line, #e5e7eb); border-radius: 12px; background: var(--surface, #fff); padding: .8rem 1rem; }
+.attendance-history { margin-top: 1.5rem; }
+.attendance-history .course-progress-heading h3 { margin: 0; color: var(--ink, #22243a); font-size: .85rem; }
+.attendance-history-list { display: grid; gap: .65rem; margin-top: .75rem; }
+.attendance-history-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .4rem 1rem; border: 1px solid var(--line, #e5e7eb); border-radius: 12px; background: var(--surface, #fff); padding: .85rem 1rem; }
+.attendance-history-card > div { display: grid; gap: .25rem; min-width: 0; }
+.attendance-history-card > div strong { overflow-wrap: anywhere; }
+.attendance-history-card small { color: var(--muted, #71717a); }
+.attendance-history-rate { color: var(--accent, #5145cd); font-size: .9rem; font-weight: 700; white-space: nowrap; }
+.attendance-history-card details { grid-column: 1 / -1; border-top: 1px solid var(--line, #e5e7eb); padding-top: .5rem; }
+.attendance-history-card summary { width: fit-content; color: var(--accent, #5145cd); cursor: pointer; font-size: .85rem; font-weight: 600; }
+.attendance-history-card details ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .35rem .8rem; margin: .6rem 0 0; padding-left: 1.1rem; color: var(--muted, #52525b); font-size: .82rem; }
+@media (max-width: 520px) { .attendance-history-card { grid-template-columns: 1fr; } .attendance-history-rate { white-space: normal; } }
+.custom-role-card > div:first-child,.custom-role-member > span { display: grid; gap: .2rem; min-width: 0; }
+.custom-role-card small,.custom-role-member small { color: var(--muted, #64748b); }
+.custom-role-actions { display: flex; gap: .5rem; }
+.custom-role-member select { width: min(100%, 20rem); }
+@media (max-width: 640px) {
+  .custom-role-permissions { grid-template-columns: 1fr; }
+  .custom-role-card,.custom-role-member { align-items: stretch; flex-direction: column; }
+  .custom-role-actions { justify-content: flex-start; }
+  .custom-role-member select { width: 100%; }
+}

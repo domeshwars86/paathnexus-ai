@@ -1,0 +1,17 @@
+{
+  "name": "PaathNexus AI",
+  "short_name": "PaathNexus",
+  "description": "One platform for learning, teaching and school operations.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fc",
+  "theme_color": "#5548d8",
+  "scope": "/",
+  "display_override": ["standalone", "minimal-ui"],
+  "icons": [
+    { "src": "/paathnexus-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Explore public courses", "short_name": "Courses", "url": "/#courses", "icons": [{ "src": "/paathnexus-icon.svg", "sizes": "any", "type": "image/svg+xml" }] }
+  ]
+}
