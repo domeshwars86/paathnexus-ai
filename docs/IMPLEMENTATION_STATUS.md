@@ -5,7 +5,7 @@ Updated: 2026-11-20
 ## Milestone 0.247 — Scan platform-admin usage and fix contrast
 - **Finding:** A new platform-admin axe scan found below-target contrast in the organization-search label and empty plan/audit states.
 - **Fix:** Added a platform-admin usage/history fixture with desktop/mobile scans. Darkened platform search labels, plan-card helper text, and shared empty-state text for readable contrast across workspace surfaces.
-- **Verification:** `npx playwright test tests/e2e/accessibility.spec.ts` passed (11 scenarios, 26 desktop/mobile surface scans); full `npx playwright test` passed (49 Chromium tests); `git diff --check` passed.
+- **Verification:** `npx playwright test tests/e2e/accessibility.spec.ts` passed (11 scenarios, 26 desktop/mobile surface scans); full `npx playwright test` passed (49 Chromium tests); `npm run build` passed; `npm test -- --run` passed (4 files, 12 tests); `git diff --check` passed.
 - **Limitations:** Automated coverage remains representative rather than exhaustive. Other role-specific modules, dialogs, keyboard-only workflows, screen-reader usage, cross-browser behavior, and physical-device behavior still need review.
 - **Next:** Extend automated scans to remaining teacher/admin workflows and dialogs, then continue API authorization and release-readiness checks.
 
