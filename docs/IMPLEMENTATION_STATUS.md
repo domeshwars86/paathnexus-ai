@@ -2,12 +2,19 @@
 
 Updated: 2026-11-20
 
+## Milestone 0.239 — Add automated responsive accessibility scans
+- **Finding:** Responsive, keyboard, and selected contrast checks existed, but automated WCAG rule scans did not cover the public page, sign-in, or an authenticated workspace dashboard. The first scan found low-contrast workspace metadata, nav labels, and dashboard captions.
+- **Fix:** Added axe-core Playwright checks for public home, sign-in, and the authenticated owner dashboard at 1280×900 and 375×812. Darkened workspace neutral text colors to meet scan thresholds; kept public/auth colors that already passed. The accessibility spec runs in the existing CI Chromium suite. Also replaced a stale hard-coded announcement date in the browser fixture with a future Asia/Kolkata date.
+- **Verification:** Axe scenarios passed (3 tests, 6 viewport scans); full Chromium suite passed (41 tests); PWA offline test passed (1 test); Vitest passed (12 tests); `npm run build` passed; npm audit found 0 vulnerabilities.
+- **Limitations:** Automated checks cover these three page states at two widths, not every module, dialog, role, or intermediate interaction. Physical screen-reader, keyboard-only, and mobile-device reviews remain pending.
+- **Next:** Extend scans to high-traffic role-specific module states and dialogs, then continue the remaining API authorization, PostgreSQL, and release-readiness checks.
+
 ## Milestone 0.238 — Verify section-scoped assessment grading
 - **Finding:** Teacher section scope was covered for assessment lists, analytics, review, and exports, but the short-answer grading mutation had no regression proving an out-of-section attempt could not be changed.
 - **Fix:** Extended the section-scope test with a rubric-backed short-answer response. It verifies an assigned teacher can grade within the assigned section, the grader/feedback/rubric/score persist, and an attempt from another section returns 404 with its answer and score unchanged. No controller change was needed.
 - **Verification:** Focused scope test passed (1 test, 36 assertions); full Laravel suite passed (115 tests, 2,578 assertions).
 - **Limitations:** This covers section assignment for grading but not all teacher multi-class combinations or every mutation boundary. Hosted PostgreSQL, production integrations, staging, and physical assistive-technology checks remain pending.
-- **Next:** Add automated accessibility scans for public/auth and workspace views, then continue the remaining route authorization and release-readiness audit.
+- **Next:** Extend automated accessibility scans to more role-specific views and dialogs, then continue the remaining route authorization and release-readiness audit.
 
 ## Milestone 0.237 — Verify section-scoped assessment and import contracts
 - **Finding:** Whole-class teacher assessment access was covered, but section assignments and filters could still regress independently. The CSV import preview contract also did not declare the existing eight-option limit, and runtime tests did not fully assert valid and malformed row projections.

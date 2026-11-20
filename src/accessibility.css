@@ -1,0 +1,51 @@
+/* Shared workspace text colors retain AA contrast on the light dashboard surfaces. */
+:root {
+  --muted: #5f6275;
+}
+
+.app-shell .brand small,
+.app-shell .new-pill {
+  color: #5143ad;
+}
+
+.app-shell .workspace-copy span,
+.app-shell .nav-label,
+.app-shell .tools-label,
+.app-shell .nav-item:not(.nav-active),
+.app-shell .help-card > span,
+.app-shell .breadcrumb,
+.app-shell kbd,
+.app-shell .profile-name small,
+.app-shell .date-line,
+.app-shell .welcome-row p,
+.app-shell .stat-card .neutral,
+.app-shell .stat-caption,
+.app-shell .stat-foot > span,
+.app-shell .eyebrow,
+.app-shell .panel-heading p,
+.app-shell .chart-total,
+.app-shell .chart-legend > span:not(.chart-total),
+.app-shell .y-labels,
+.app-shell .chart,
+.app-shell .chart-note,
+.app-shell .agenda-copy span,
+.app-shell .agenda-more,
+.app-shell .task-message,
+.app-shell .class-card-heading span,
+.app-shell .form-hint,
+.app-shell footer > span,
+.app-shell footer > button {
+  color: #5f6275;
+}
+
+.app-shell .avatar {
+  color: #573b7e;
+}
+
+.app-shell .spotlight-top .eyebrow {
+  color: #4f468f;
+}
+
+.app-shell .spotlight-panel p {
+  color: #4d4d68;
+}

@@ -460,7 +460,10 @@ test('workspace manager can schedule an announcement in the workspace timezone',
   await page.getByLabel('शीर्षक', { exact: true }).fill('Tomorrow’s science activity');
   await page.getByLabel('संदेश', { exact: true }).fill('Bring your notebook.');
   await page.getByRole('combobox', { name: 'प्राप्तकर्ता' }).selectOption('students');
-  await page.getByLabel(/प्रकाशन समय/).fill('2026-11-20T09:30');
+  const futureWorkspaceDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date(Date.now() + 48 * 60 * 60 * 1000));
+  await page.getByLabel(/प्रकाशन समय/).fill(`${futureWorkspaceDate}T09:30`);
   await page.getByRole('button', { name: 'सूचना शेड्यूल करें' }).click();
   await expect(page.getByText('Tomorrow’s science activity')).toBeVisible();
   await expect(page.getByText(/विद्यार्थी · शेड्यूल की गई/)).toBeVisible();

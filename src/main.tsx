@@ -5,6 +5,7 @@ import './styles.css';
 import './auth.css';
 import './tenant.css';
 import './public.css';
+import './accessibility.css';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode><App /></React.StrictMode>,
