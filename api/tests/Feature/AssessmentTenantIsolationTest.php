@@ -55,6 +55,8 @@ class AssessmentTenantIsolationTest extends TestCase
 
         $this->actingAs($workspace['learner'], 'sanctum')->postJson($base.'/assessments/'.$workspace['assessment']->id.'/attempts')
             ->assertNotFound();
+        $this->actingAs($workspace['learner'], 'sanctum')->getJson($base.'/assessments/'.$workspace['assessment']->id.'/attempts/'.$workspace['attempt']->id.'/result')
+            ->assertOk()->assertJsonPath('data.attempt.id', $workspace['attempt']->id);
         $this->assertDatabaseCount('assessment_attempts', 1);
     }
 
