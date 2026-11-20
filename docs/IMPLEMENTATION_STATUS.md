@@ -2,12 +2,19 @@
 
 Updated: 2026-11-20
 
+## Milestone 0.237 — Verify section-scoped assessment and import contracts
+- **Finding:** Whole-class teacher assessment access was covered, but section assignments and filters could still regress independently. The CSV import preview contract also did not declare the existing eight-option limit, and runtime tests did not fully assert valid and malformed row projections.
+- **Fix:** Added a section-assignment regression covering attempt lists, analytics, review, grade export, and an explicit out-of-scope learner filter. Added the question import option limit to OpenAPI and expanded rubric/import schema and runtime assertions for valid option objects, invalid type/difficulty values, row errors, and imported question fields. No controller behavior change was needed.
+- **Verification:** Focused section/import/OpenAPI tests passed (4 tests, 882 assertions); full Laravel suite passed (115 tests, 2,568 assertions); `php artisan openapi:export --check` passed. Local sign-in verification tests passed (3 tests, 12 assertions); email verification is disabled in local Laravel and Vite config, and the restarted API and frontend health checks return 200 at ports 8013 and 5191.
+- **Limitations:** These tests cover one teacher/section pairing and CSV row variants, not every multi-class, rubric, or importer failure combination. Hosted PostgreSQL, production integrations, staging, and physical assistive-technology checks remain pending.
+- **Next:** Continue the assessment analytics/import and route authorization audit, then run remaining release-readiness checks.
+
 ## Milestone 0.236 — Verify teacher assessment result scopes
 - **Finding:** Teacher class-assignment scope was applied in attempt lists, analytics, and grade CSV export, but those endpoints lacked a direct regression proving an unassigned learner could not appear or be selected by filter.
 - **Fix:** Added a synthetic workspace test with a teacher assigned to one class and an unassigned classmate. It verifies attempt lists, aggregate analytics, and grade exports include only the assigned learner, including when an API filter explicitly names the unassigned learner. No controller change was needed.
 - **Verification:** Focused teacher-scope test passed (1 test, 23 assertions); full Laravel suite passed (114 tests, 2,509 assertions).
-- **Limitations:** This covers whole-class assignment for these three endpoints. Section-specific assignment, teacher analytics with multiple classes, import response behavior, hosted PostgreSQL, production integrations, and physical assistive-technology checks remain pending.
-- **Next:** Audit section-scoped assessment endpoints and rubric/import response contracts, then continue release-readiness checks.
+- **Limitations:** This covers whole-class assignment for these three endpoints. Section-specific scope is covered in milestone 0.237; teacher analytics with multiple classes, hosted PostgreSQL, production integrations, and physical assistive-technology checks remain pending.
+- **Next:** Continue the assessment analytics/import and route authorization audit, then run remaining release-readiness checks.
 
 ## Milestone 0.235 — Verify assessment tenant boundaries and local sign-in
 - **Finding:** Assessment result and review queries already scope by organization, assessment, and linked learner, but dedicated tests did not explicitly cover swapped tenant, assessment, and attempt identifiers. The local preview was also showing catalog request errors while its old API worker was unresponsive.

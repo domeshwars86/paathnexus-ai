@@ -1143,7 +1143,7 @@ class ExportOpenApi extends Command
                             'row_number' => ['type' => 'integer', 'minimum' => 2], 'valid' => ['type' => 'boolean'],
                             'question' => ['type' => 'object', 'required' => ['prompt', 'topic', 'difficulty', 'type', 'options'], 'properties' => [
                                 'prompt' => ['type' => 'string'], 'topic' => ['type' => ['string', 'null']], 'difficulty' => ['type' => ['integer', 'string']],
-                                'type' => ['type' => 'string'], 'options' => ['type' => 'array', 'items' => ['type' => 'object', 'required' => ['text', 'is_correct'], 'properties' => ['text' => ['type' => 'string'], 'is_correct' => ['type' => 'boolean']]]],
+                                'type' => ['type' => 'string'], 'options' => ['type' => 'array', 'maxItems' => 8, 'items' => ['type' => 'object', 'required' => ['text', 'is_correct'], 'properties' => ['text' => ['type' => 'string'], 'is_correct' => ['type' => 'boolean']]]],
                             ]],
                             'errors' => ['type' => 'object', 'additionalProperties' => ['type' => 'array', 'items' => ['type' => 'string']]],
                         ],

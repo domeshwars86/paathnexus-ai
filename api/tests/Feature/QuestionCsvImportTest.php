@@ -33,26 +33,39 @@ class QuestionCsvImportTest extends TestCase
             'file' => UploadedFile::fake()->createWithContent('questions.csv', $validCsv),
         ])->assertOk()->assertJsonPath('data.valid', true)->assertJsonPath('data.row_count', 2)->assertJsonPath('data.valid_count', 2)->json('data');
         $this->assertSame([], $preview['errors']);
+        $this->assertSame(['prompt', 'topic', 'difficulty', 'type', 'options'], array_keys($preview['rows'][0]['question']));
+        $this->assertSame(2, $preview['rows'][0]['question']['difficulty']);
+        $this->assertSame([['text' => 'Mars', 'is_correct' => true], ['text' => 'Venus', 'is_correct' => false]], $preview['rows'][0]['question']['options']);
         $this->assertDatabaseCount('questions', 0);
 
         $invalidCsv = implode("\r\n", [
             $header,
             '"Choose one answer",single_choice,2,Science,A,true,B,true,,',
             '"Missing prompt",multiple_select,7,Science,A,maybe,B,false,,',
+            '"Text difficulty",essay,hard,,A,false,B,no,,',
         ]);
         $this->actingAs($owner, 'sanctum')->post($url.'/import/preview', [
             'file' => UploadedFile::fake()->createWithContent('invalid.csv', $invalidCsv),
-        ])->assertOk()->assertJsonPath('data.valid', false)->assertJsonPath('data.row_count', 2)
-            ->assertJsonPath('data.rows.0.valid', false)->assertJsonPath('data.rows.1.valid', false);
+        ])->assertOk()->assertJsonPath('data.valid', false)->assertJsonPath('data.row_count', 3)
+            ->assertJsonPath('data.rows.0.valid', false)->assertJsonPath('data.rows.1.valid', false)
+            ->assertJsonPath('data.rows.2.valid', false)->assertJsonPath('data.rows.2.question.difficulty', 'hard')
+            ->assertJsonPath('data.rows.2.question.type', 'essay')->assertJsonPath('data.rows.2.question.topic', null)
+            ->assertJsonPath('data.rows.2.errors.type.0', 'The selected type is invalid.')
+            ->assertJsonPath('data.rows.2.errors.difficulty.0', 'The difficulty field must be an integer.');
         $this->actingAs($owner, 'sanctum')->post($url.'/import', [
             'file' => UploadedFile::fake()->createWithContent('invalid.csv', $invalidCsv),
         ])->assertUnprocessable()->assertJsonPath('data.valid', false);
         $this->assertDatabaseCount('questions', 0);
 
-        $this->actingAs($owner, 'sanctum')->post($url.'/import', [
+        $imported = $this->actingAs($owner, 'sanctum')->post($url.'/import', [
             'file' => UploadedFile::fake()->createWithContent('questions.csv', $validCsv),
         ])->assertCreated()->assertJsonPath('data.imported_count', 2)->assertJsonPath('data.questions.0.type', 'single_choice')
-            ->assertJsonPath('data.questions.1.type', 'multiple_select');
+            ->assertJsonPath('data.questions.1.type', 'multiple_select')->json('data');
+        $this->assertSame($course['id'], $imported['questions'][0]['course_id']);
+        $this->assertSame('Space', $imported['questions'][0]['topic']);
+        $this->assertNull($imported['questions'][0]['grading_rubric']);
+        $this->assertSame('Mars', $imported['questions'][0]['options'][0]['text']);
+        $this->assertTrue($imported['questions'][0]['options'][0]['is_correct']);
         $this->assertDatabaseCount('questions', 2);
         $this->assertDatabaseCount('question_options', 5);
         $this->assertDatabaseHas('question_options', ['text' => '5', 'is_correct' => true]);
