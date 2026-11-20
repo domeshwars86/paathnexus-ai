@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Enrollment;
 use App\Models\AcademicYear;
 use App\Models\ClassTeacherAssignment;
+use App\Models\Course;
+use App\Models\CourseEnrollment;
 use App\Models\Organization;
 use App\Models\OrganizationClass;
 use App\Models\StudentProfile;
@@ -16,6 +18,44 @@ use Tests\TestCase;
 class LiveSessionTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_draft_course_hides_learner_session_and_revokes_direct_meeting_access(): void
+    {
+        $organization = Organization::create(['name' => 'Draft Course Session', 'slug' => 'draft-course-session', 'type' => 'school', 'status' => 'active']);
+        $owner = User::factory()->create();
+        $studentUser = User::factory()->create();
+        $organization->users()->attach($owner, ['role' => 'owner', 'status' => 'active', 'joined_at' => now()]);
+        $organization->users()->attach($studentUser, ['role' => 'student', 'status' => 'active', 'joined_at' => now()]);
+        $student = StudentProfile::create([
+            'organization_id' => $organization->id, 'student_code' => 'DRAFT-LIVE-1', 'name' => 'Synthetic Learner',
+            'status' => 'active', 'user_id' => $studentUser->id,
+        ]);
+        $course = Course::create([
+            'organization_id' => $organization->id, 'code' => 'DRAFT-LIVE', 'title' => 'Private course',
+            'status' => 'active', 'created_by' => $owner->id,
+        ]);
+        CourseEnrollment::create([
+            'organization_id' => $organization->id, 'course_id' => $course->id, 'student_id' => $student->id,
+            'status' => 'active', 'enrolled_by' => $owner->id, 'enrolled_at' => now(),
+        ]);
+        $base = '/api/v1/organizations/'.$organization->id;
+        $starts = now()->addMinutes(8);
+        $session = $this->actingAs($owner, 'sanctum')->postJson($base.'/live-sessions', [
+            'course_id' => $course->id, 'title' => 'Course tutorial',
+            'starts_at' => $starts->toIso8601String(), 'ends_at' => $starts->copy()->addHour()->toIso8601String(),
+            'meeting_url' => 'https://meet.google.com/private-class',
+        ])->assertCreated()->json('data');
+
+        $this->actingAs($studentUser, 'sanctum')->getJson($base.'/live-sessions')->assertOk()
+            ->assertJsonFragment(['id' => $session['id']]);
+        $this->actingAs($owner, 'sanctum')->putJson($base.'/courses/'.$course->id, [
+            'title' => $course->title, 'status' => 'draft',
+        ])->assertOk()->assertJsonPath('data.status', 'draft');
+
+        $this->actingAs($studentUser, 'sanctum')->getJson($base.'/live-sessions')->assertOk()->assertJsonCount(0, 'data');
+        $this->actingAs($studentUser, 'sanctum')->postJson($base.'/live-sessions/'.$session['id'].'/join')->assertNotFound();
+        $this->assertDatabaseCount('live_session_accesses', 0);
+    }
 
     public function test_meeting_access_is_audience_scoped_and_session_attendance_uses_existing_records(): void
     {

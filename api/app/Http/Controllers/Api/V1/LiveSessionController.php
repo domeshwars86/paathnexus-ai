@@ -36,6 +36,7 @@ class LiveSessionController extends Controller
                 ->where('student_id', $student->id)->where('status', 'active')->get(['class_id', 'section_id']);
             $courseIds = DB::table('course_enrollments')->where('organization_id', $organization->id)
                 ->where('student_id', $student->id)->where('status', 'active')->pluck('course_id');
+            $courseIds = $organization->courses()->where('status', 'active')->whereIn('id', $courseIds)->pluck('id');
             if ($classEnrollments->isEmpty() && $courseIds->isEmpty()) return response()->json(['data' => []]);
             $query->where(function ($audience) use ($classEnrollments, $courseIds): void {
                 foreach ($classEnrollments as $enrollment) {
@@ -226,6 +227,7 @@ class LiveSessionController extends Controller
                 ->where('student_id', $student->id)->where('status', 'active')
                 ->when($session->section_id, fn ($query) => $query->where('section_id', $session->section_id))->exists(), 404);
         } elseif ($session->course_id) {
+            abort_unless($organization->courses()->where('status', 'active')->whereKey($session->course_id)->exists(), 404);
             abort_unless(DB::table('course_enrollments')->where('organization_id', $organization->id)->where('course_id', $session->course_id)
                 ->where('student_id', $student->id)->where('status', 'active')->exists(), 404);
         }

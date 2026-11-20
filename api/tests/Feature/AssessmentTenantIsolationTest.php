@@ -45,6 +45,19 @@ class AssessmentTenantIsolationTest extends TestCase
         $this->actingAs($first['owner'], 'sanctum')->getJson($foreignAttemptReview)->assertNotFound();
     }
 
+    public function test_learner_cannot_start_a_published_assessment_after_its_course_becomes_draft(): void
+    {
+        $workspace = $this->createAssessmentWorkspace('Drafted');
+        $base = '/api/v1/organizations/'.$workspace['organization']->id;
+        $this->actingAs($workspace['owner'], 'sanctum')->putJson($base.'/courses/'.$workspace['course']->id, [
+            'title' => $workspace['course']->title, 'status' => 'draft',
+        ])->assertOk()->assertJsonPath('data.status', 'draft');
+
+        $this->actingAs($workspace['learner'], 'sanctum')->postJson($base.'/assessments/'.$workspace['assessment']->id.'/attempts')
+            ->assertNotFound();
+        $this->assertDatabaseCount('assessment_attempts', 1);
+    }
+
     /** @return array{organization: Organization, owner: User, learner: User, course: Course, assessment: Assessment, attempt: AssessmentAttempt} */
     private function createAssessmentWorkspace(string $label): array
     {

@@ -221,6 +221,7 @@ class AssessmentController extends Controller
         abort_unless($request->user()->can('viewCourses', $organization), 403);
         abort_unless($request->user()->can('takeAssessments', $organization), 403);
         $assessment = Assessment::query()->where('organization_id', $organization->id)->where('status', 'published')
+            ->whereHas('course', fn ($query) => $query->where('status', 'active'))
             ->with(['questions.question.options'])->whereKey($assessmentId)->firstOrFail();
         $student = $this->linkedStudent($request, $organization);
         abort_unless($student && $assessment->course->enrollments()->where('student_id', $student->id)->where('status', 'active')->exists(), 404);

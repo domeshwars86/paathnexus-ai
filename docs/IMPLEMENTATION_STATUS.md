@@ -2,6 +2,13 @@
 
 Updated: 2026-11-20
 
+## Milestone 0.245 — Revoke learner access when courses become drafts
+- **Finding:** A learner with a retained enrollment could start a published assessment by its known ID and receive a course live-session URL after a manager changed that course to draft. Learner-facing lists already hid the draft course, but the direct assessment and session paths did not recheck course status.
+- **Fix:** Require an active course when starting a published assessment, restrict learner live-session listings to active course enrollments, and reject direct meeting access for draft courses. Added regressions covering the supported active-to-draft transition, absent new attempt/access records, and the disappearing session.
+- **Verification:** Focused assessment and live-session tests passed (4 tests, 56 assertions); full Laravel suite passed (120 tests, 2,626 assertions); PHP syntax and diff checks passed.
+- **Limitations:** Retained enrollment and assessment history remain unchanged; only new attempts and learner session access are revoked. Hosted PostgreSQL and deployment verification remain pending.
+- **Next:** Continue API tenant-scope and release-readiness audits, then verify hosted PostgreSQL and release gates.
+
 ## Milestone 0.244 — Enforce teacher course scope for AI tutor context
 - **Finding:** A teacher with `courses.manage` could attach another teacher’s private course and lesson to an AI tutor request. The course-manager permission bypassed enrollment checks, and the tutor did not apply the existing created-or-assigned teacher course scope before forwarding lesson content.
 - **Fix:** Resolve tutor course context through `TeacherCourseScope`, retaining manager and learner access while restricting teachers to courses they created or were assigned. Added a regression proving an out-of-scope request returns 404 before provider traffic or usage metering.
