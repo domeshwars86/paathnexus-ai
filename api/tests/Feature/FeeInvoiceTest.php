@@ -117,6 +117,8 @@ class FeeInvoiceTest extends TestCase
             'amount' => '600.00', 'method' => 'bank_transfer', 'transaction_reference' => 'UTR-PAY-2', 'idempotency_key' => 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13',
         ])->assertCreated();
         $this->actingAs($owner, 'sanctum')->postJson($base.'/fee-invoices/'.$invoice['id'].'/void')->assertStatus(409);
+        $this->assertDatabaseHas('fee_invoices', ['id' => $invoice['id'], 'status' => 'paid']);
+        $this->assertDatabaseCount('fee_payments', 2);
         $this->actingAs($studentUser, 'sanctum')->getJson($base.'/fee-invoices')->assertOk()->assertJsonPath('data.0.status', 'paid')->assertJsonPath('data.0.balance_paise', 0);
     }
 

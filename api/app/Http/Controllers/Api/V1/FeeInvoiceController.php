@@ -161,9 +161,18 @@ class FeeInvoiceController extends Controller
     {
         $organization = $this->organization($request, $organizationId);
         abort_unless($request->user()->can('manageAcademic', $organization), 403);
-        $invoice = FeeInvoice::query()->where('organization_id', $organization->id)->whereKey($invoiceId)->firstOrFail();
-        abort_unless($invoice->status === 'issued' && ! $invoice->payments()->exists(), 409, 'Invoices with recorded payments cannot be voided.');
-        $invoice->forceFill(['status' => 'void', 'voided_at' => now()])->save();
+        $invoice = DB::transaction(function () use ($organization, $invoiceId): FeeInvoice {
+            // Keep the same organization -> invoice lock order used by manual and webhook payments.
+            $lockedOrganization = Organization::query()->whereKey($organization->id)
+                ->where('status', 'active')->lockForUpdate()->firstOrFail();
+            $invoice = FeeInvoice::query()->where('organization_id', $lockedOrganization->id)
+                ->whereKey($invoiceId)->lockForUpdate()->firstOrFail();
+            abort_unless($invoice->status === 'issued' && ! $invoice->payments()->exists(), 409, 'Invoices with recorded payments cannot be voided.');
+            $invoice->forceFill(['status' => 'void', 'voided_at' => now()])->save();
+
+            return $invoice;
+        });
+
         return response()->json(['data' => ['id' => $invoice->id, 'status' => $invoice->status]]);
     }
 

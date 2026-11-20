@@ -2,6 +2,12 @@
 
 Updated: 2026-11-20
 
+## Milestone 0.248 — Serialize invoice voiding with payment capture
+- **Finding:** Invoice voiding checked for payments and updated status without locking, allowing it to race with manual or signed-webhook capture and produce a void invoice with a recorded payment.
+- **Fix:** Invoice voiding now locks the active organization and then its tenant-scoped invoice inside a transaction, matching the lock order used by both payment paths. The payment regression asserts a paid invoice and its receipts remain intact when a subsequent void is rejected.
+- **Verification:** `php artisan test --filter=FeeInvoiceTest` passed (6 tests, 97 assertions); full Laravel suite passed (121 tests, 2,636 assertions); PHP syntax checks for the controller and test passed; `git diff --check` passed. Local tests use SQLite, which does not exercise PostgreSQL row-lock concurrency; hosted PostgreSQL verification remains necessary.
+- **Next:** Continue the remaining API scope and release-readiness audit; verify the locking behavior on the hosted PostgreSQL CI service when available.
+
 ## Milestone 0.247 — Scan platform-admin usage and fix contrast
 - **Finding:** A new platform-admin axe scan found below-target contrast in the organization-search label and empty plan/audit states.
 - **Fix:** Added a platform-admin usage/history fixture with desktop/mobile scans. Darkened platform search labels, plan-card helper text, and shared empty-state text for readable contrast across workspace surfaces.
