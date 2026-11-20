@@ -2,6 +2,13 @@
 
 Updated: 2026-11-20
 
+## Milestone 0.243 — Re-check announcement audiences after role changes
+- **Finding:** A member who changed from teacher to student could still read a previously delivered teachers-only announcement from the notification feed, and the hidden item counted as unread.
+- **Fix:** Re-evaluate the member’s current role when listing announcement notifications and counting unread items. The mark-read endpoint now also returns 404 for notifications outside the member’s current audience. Added a regression covering role downgrade, hidden feed item, unread total, mark-read denial, and visibility for a current teacher.
+- **Verification:** Focused announcement tests passed (4 tests, 99 assertions); full Laravel suite passed (117 tests, 2,609 assertions).
+- **Limitations:** Hosted PostgreSQL CI remains pending; the role-change regression uses a persisted membership role update.
+- **Next:** Continue route-by-route tenant and role authorization review, then verify hosted PostgreSQL and release gates.
+
 ## Milestone 0.242 — Scope assignment grading and test migration recovery
 - **Finding:** Assignment-submission lists filtered teachers to assigned learners, but the direct grading endpoint did not, allowing a teacher with course-management access to grade another section’s submission. CI exercised migrations through feature tests but did not explicitly run rollback and re-application.
 - **Fix:** Apply the assigned-student scope to course-assignment grading and return 404 for out-of-scope submissions. Added a regression proving an assigned learner can be graded while an unassigned learner’s grade and feedback remain unchanged. Added SQLite/PostgreSQL migration fresh → rollback → re-apply steps to CI. Adjusted named-foreign-key rollback paths for SQLite while retaining PostgreSQL constraint names.

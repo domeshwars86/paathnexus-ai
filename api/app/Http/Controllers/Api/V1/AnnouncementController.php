@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\WorkspaceNotification;
 use App\Models\WorkspaceFeedbackNotification;
 use App\Services\AnnouncementDelivery;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -108,8 +109,7 @@ class AnnouncementController extends Controller
     {
         $organization = $this->organization($request, $organizationId);
         abort_unless($request->user()->can('view', $organization), 403);
-        $baseQuery = WorkspaceNotification::query()->where('organization_id', $organization->id)->where('user_id', $request->user()->id)
-            ->whereHas('announcement', fn ($announcements) => $announcements->where('status', 'published'));
+        $baseQuery = $this->visibleAnnouncementNotifications($request, $organization);
         $announcementUnread = (clone $baseQuery)->whereNull('read_at')->count();
         $announcementItems = (clone $baseQuery)
             ->with('announcement:id,title,body,audience,published_at')->orderByDesc('created_at')->limit(100)->get();
@@ -139,8 +139,7 @@ class AnnouncementController extends Controller
     {
         $organization = $this->organization($request, $organizationId);
         abort_unless($request->user()->can('view', $organization), 403);
-        $notification = WorkspaceNotification::query()->where('organization_id', $organization->id)
-            ->where('user_id', $request->user()->id)->whereKey($notificationId)->first();
+        $notification = $this->visibleAnnouncementNotifications($request, $organization)->whereKey($notificationId)->first();
         if ($notification) {
             $notification->forceFill(['read_at' => $notification->read_at ?? now()])->save();
         } else {
@@ -155,6 +154,22 @@ class AnnouncementController extends Controller
     {
         return $request->user()->organizations()->wherePivot('status', 'active')->where('organizations.status', 'active')
             ->where('organizations.id', $organizationId)->firstOrFail();
+    }
+
+    private function visibleAnnouncementNotifications(Request $request, Organization $organization): Builder
+    {
+        $membership = $organization->users()->where('users.id', $request->user()->id)->firstOrFail();
+        $canManage = $request->user()->can('manageAcademic', $organization);
+
+        return WorkspaceNotification::query()->where('organization_id', $organization->id)->where('user_id', $request->user()->id)
+            ->whereHas('announcement', function (Builder $announcements) use ($membership, $canManage): void {
+                $announcements->where('status', 'published');
+                if (! $canManage) {
+                    $audience = $this->audienceForRole($membership->pivot->role);
+                    $announcements->where(fn (Builder $audiences) => $audiences
+                        ->where('audience', 'all_members')->orWhere('audience', $audience));
+                }
+            });
     }
 
     private function audienceForRole(string $role): string

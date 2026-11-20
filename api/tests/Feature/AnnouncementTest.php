@@ -80,6 +80,45 @@ class AnnouncementTest extends TestCase
         ]);
     }
 
+    public function test_existing_announcement_notifications_follow_the_members_current_role(): void
+    {
+        $organization = Organization::create([
+            'name' => 'Role Change Notice Workspace', 'slug' => 'role-change-notice-workspace', 'type' => 'school', 'status' => 'active',
+        ]);
+        $owner = User::factory()->create(['name' => 'Notice Manager']);
+        $staffMember = User::factory()->create(['name' => 'Former Teacher']);
+        $teacher = User::factory()->create(['name' => 'Current Teacher']);
+        $organization->users()->attach($owner, ['role' => 'owner', 'status' => 'active', 'joined_at' => now()]);
+        foreach ([$staffMember, $teacher] as $member) {
+            $organization->users()->attach($member, ['role' => 'teacher', 'status' => 'active', 'joined_at' => now()]);
+        }
+
+        $base = '/api/v1/organizations/'.$organization->id;
+        $announcement = $this->actingAs($owner, 'sanctum')->postJson($base.'/announcements', [
+            'title' => 'Staff-only planning update', 'body' => 'Internal schedule details for teachers.', 'audience' => 'teachers',
+        ])->assertCreated()->assertJsonPath('data.recipient_count', 2)->json('data');
+        $staffNotification = $this->actingAs($staffMember, 'sanctum')->getJson($base.'/notifications')
+            ->assertOk()->assertJsonPath('data.unread_count', 1)->assertJsonPath('data.items.0.title', 'Staff-only planning update')
+            ->json('data.items.0');
+        $this->actingAs($teacher, 'sanctum')->getJson($base.'/notifications')
+            ->assertOk()->assertJsonPath('data.unread_count', 1)->assertJsonCount(1, 'data.items');
+
+        $organization->users()->updateExistingPivot($staffMember->id, ['role' => 'student']);
+
+        $this->actingAs($staffMember, 'sanctum')->getJson($base.'/announcements')->assertOk()->assertJsonCount(0, 'data');
+        $this->actingAs($staffMember, 'sanctum')->getJson($base.'/notifications')
+            ->assertOk()->assertJsonPath('data.unread_count', 0)->assertJsonCount(0, 'data.items');
+        $this->actingAs($staffMember, 'sanctum')->postJson($base.'/notifications/'.$staffNotification['id'].'/read')->assertNotFound();
+
+        $this->actingAs($teacher, 'sanctum')->getJson($base.'/announcements')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $announcement['id']);
+        $this->actingAs($teacher, 'sanctum')->getJson($base.'/notifications')
+            ->assertOk()->assertJsonPath('data.unread_count', 1)->assertJsonPath('data.items.0.body', 'Internal schedule details for teachers.');
+        $this->assertDatabaseHas('workspace_notifications', [
+            'organization_id' => $organization->id, 'announcement_id' => $announcement['id'], 'user_id' => $staffMember->id,
+        ]);
+    }
+
     public function test_scheduled_announcements_are_manager_only_until_due_and_deliver_once(): void
     {
         $organization = Organization::create([
