@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Sprint sequence
-Milestone 0.248 closes the invoice-void/payment-capture race with matching organization-to-invoice lock order. PostgreSQL concurrency verification remains pending; proceed with the full test suite and remaining API/release audits.
+Milestone 0.248 closes the invoice-void/payment-capture race with matching organization-to-invoice lock order; the full Laravel suite passes (121 tests, 2,636 assertions). PostgreSQL concurrency verification remains pending; continue the remaining API-scope and release-readiness audits.
 1. **Foundation (current):** app shell, local teacher dashboard, contributor guide, architecture records. The local frontend preview uses port 5174, separate from the other project on 5173; the Laravel API uses 8013.
 2. **Identity and tenant core (in progress):** Laravel 13 API, Sanctum, registration/login, signed email verification and password recovery, organizations/memberships, workspace switching, initial role capabilities, admin/educator/teacher/student/guardian custom permission profiles, and tenant isolation tests are in place. Verification defaults off locally while email uses the log driver; the local sign-in screen hides the resend flow unless `VITE_REQUIRE_EMAIL_VERIFICATION=true`. Current local Laravel config cache was cleared and API restarted on port 8013 with the verification gate confirmed off. Production email-provider setup and hosted PostgreSQL verification remain.
 3. **Teacher vertical slice (in progress):** Persistent tenant-scoped tasks, classes, student profiles, enrollments, per-student attendance, dashboard summaries, and weekly timetable are implemented.
