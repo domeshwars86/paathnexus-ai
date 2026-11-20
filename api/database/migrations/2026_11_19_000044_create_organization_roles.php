@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -30,9 +31,12 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('organization_user', function (Blueprint $table): void {
+        $foreignKey = DB::connection()->getDriverName() === 'sqlite'
+            ? ['organization_id', 'custom_role_id']
+            : 'organization_user_custom_role_fk';
+        Schema::table('organization_user', function (Blueprint $table) use ($foreignKey): void {
             $table->dropIndex('organization_user_custom_role_index');
-            $table->dropForeign('organization_user_custom_role_fk');
+            $table->dropForeign($foreignKey);
             $table->dropColumn('custom_role_id');
         });
 

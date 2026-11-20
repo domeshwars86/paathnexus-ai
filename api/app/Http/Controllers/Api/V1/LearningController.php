@@ -555,6 +555,9 @@ class LearningController extends Controller
         $course = $this->scopedCourses($organization, $request)->whereKey($courseId)->firstOrFail();
         $assignment = $course->assignments()->whereKey($assignmentId)->firstOrFail();
         $submission = $assignment->submissions()->whereKey($submissionId)->firstOrFail();
+        if (($studentIds = $this->scopedTeacherStudentIds($organization, $request)) !== null) {
+            abort_unless($studentIds->contains($submission->student_id), 404);
+        }
         $validated = $request->validate([
             'score' => ['required', 'numeric', 'min:0', 'max:'.$assignment->max_points],
             'feedback' => ['nullable', 'string', 'max:5000'],

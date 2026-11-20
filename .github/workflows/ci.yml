@@ -45,6 +45,13 @@ jobs:
           coverage: none
       - run: composer install --no-interaction --prefer-dist --no-progress
       - run: composer audit --locked
+      - name: Verify SQLite migrations can roll back and re-run
+        run: |
+          export DB_DATABASE="$RUNNER_TEMP/paathnexus-migration-smoke.sqlite"
+          touch "$DB_DATABASE"
+          php artisan migrate:fresh --force
+          php artisan migrate:rollback --force
+          php artisan migrate --force
       - run: php artisan test --compact
 
   api-postgres:
@@ -84,4 +91,9 @@ jobs:
           coverage: none
       - run: composer install --no-interaction --prefer-dist --no-progress
       - run: composer audit --locked
+      - name: Verify PostgreSQL migrations can roll back and re-run
+        run: |
+          php artisan migrate:fresh --force
+          php artisan migrate:rollback --force
+          php artisan migrate --force
       - run: php artisan test --compact

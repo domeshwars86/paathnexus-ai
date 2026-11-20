@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -25,14 +26,20 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('attendance_sessions', function (Blueprint $table): void {
-            $table->dropForeign('attendance_section_same_class_fk');
+        $attendanceForeignKey = DB::connection()->getDriverName() === 'sqlite'
+            ? ['organization_id', 'class_id', 'section_id']
+            : 'attendance_section_same_class_fk';
+        Schema::table('attendance_sessions', function (Blueprint $table) use ($attendanceForeignKey): void {
+            $table->dropForeign($attendanceForeignKey);
             $table->dropIndex('attendance_section_scope_idx');
             $table->dropColumn('section_id');
         });
 
-        Schema::table('enrollments', function (Blueprint $table): void {
-            $table->dropForeign('enrollments_section_same_class_fk');
+        $enrollmentForeignKey = DB::connection()->getDriverName() === 'sqlite'
+            ? ['organization_id', 'class_id', 'section_id']
+            : 'enrollments_section_same_class_fk';
+        Schema::table('enrollments', function (Blueprint $table) use ($enrollmentForeignKey): void {
+            $table->dropForeign($enrollmentForeignKey);
             $table->dropIndex('enrollments_section_scope_idx');
             $table->dropColumn('section_id');
         });

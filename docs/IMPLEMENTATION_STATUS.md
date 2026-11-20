@@ -2,6 +2,13 @@
 
 Updated: 2026-11-20
 
+## Milestone 0.242 — Scope assignment grading and test migration recovery
+- **Finding:** Assignment-submission lists filtered teachers to assigned learners, but the direct grading endpoint did not, allowing a teacher with course-management access to grade another section’s submission. CI exercised migrations through feature tests but did not explicitly run rollback and re-application.
+- **Fix:** Apply the assigned-student scope to course-assignment grading and return 404 for out-of-scope submissions. Added a regression proving an assigned learner can be graded while an unassigned learner’s grade and feedback remain unchanged. Added SQLite/PostgreSQL migration fresh → rollback → re-apply steps to CI. Adjusted named-foreign-key rollback paths for SQLite while retaining PostgreSQL constraint names.
+- **Verification:** Focused scope test passed (1 test, 10 assertions); full Laravel suite passed (116 tests, 2,588 assertions); local disposable SQLite fresh → rollback → migrate passed. PostgreSQL migration smoke is configured in CI but not run in this local environment.
+- **Limitations:** Hosted PostgreSQL CI and deployment remain unverified. Additional API scope combinations and production integrations still need review.
+- **Next:** Continue route-by-route tenant and role authorization review; verify PostgreSQL and deployment gates in hosted CI when available.
+
 ## Milestone 0.241 — Scan guardian and assessment workflows
 - **Finding:** Axe coverage did not yet include guardian learning/billing or assessment authoring/review. The assessment scans found muted labels below WCAG contrast targets and a horizontally scrollable analytics table that was not keyboard-focusable.
 - **Fix:** Added desktop/mobile scans for the guardian family summary and invoices, assessment authoring, and answer review with rubric grading. Darkened muted dashboard and assessment labels; made the question-accuracy table a labeled, keyboard-focusable region.
