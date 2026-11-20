@@ -2,6 +2,13 @@
 
 Updated: 2026-11-20
 
+## Milestone 0.246 — Scan manager announcements for accessibility
+- **Finding:** The manager announcement lifecycle had functional browser coverage, but the accessibility suite did not scan its creation form, audience controls, scheduled-publish control, or announcement cards.
+- **Fix:** Added a synthetic owner announcement fixture and desktop/mobile axe scans for the manager announcements screen.
+- **Verification:** `npx playwright test tests/e2e/accessibility.spec.ts` passed (9 scenarios, 18 desktop/mobile viewport scans); `git diff --check` passed.
+- **Limitations:** Automated scans still cover representative workflows rather than every role, dialog, and interaction state. Manual screen-reader, cross-browser, and physical-device checks remain pending.
+- **Next:** Extend axe coverage to the remaining teacher/admin workflows and dialogs, then continue API authorization and release-readiness checks.
+
 ## Milestone 0.245 — Revoke learner access when courses become drafts
 - **Finding:** A learner with a retained enrollment could start a published assessment by its known ID and receive a course live-session URL after a manager changed that course to draft. Learner-facing lists already hid the draft course, but the direct assessment and session paths did not recheck course status.
 - **Fix:** Require an active course before creating a new assessment attempt, while allowing an already-started in-progress attempt to resume so learners can finish work they began. Restrict learner live-session listings to active course enrollments and reject direct meeting access for draft courses. Preserve each learner's own submitted assessment results as historical records. Added regressions covering the supported active-to-draft transition, retained result access, preserved in-progress work, absent new attempt/access records, and the disappearing session.

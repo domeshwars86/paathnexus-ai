@@ -117,6 +117,51 @@ test('workspace dashboard passes automated WCAG 2.2 AA checks on desktop and mob
   }
 });
 
+test('manager announcements pass automated WCAG 2.2 AA checks on desktop and mobile', async ({ page }, testInfo) => {
+  const organizationId = 'accessibility-announcement-workspace';
+  await page.addInitScript(() => {
+    sessionStorage.setItem('paathnexus.session-token', 'accessibility-announcement-token');
+    sessionStorage.setItem('paathnexus.active-organization', 'accessibility-announcement-workspace');
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const send = (data: unknown) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data }),
+    });
+    if (path.endsWith('/auth/me')) return send({
+      user: { name: 'Demo Manager', email: 'manager@example.test' },
+      organizations: [{
+        id: organizationId, name: 'Sample Academy', slug: 'sample-academy', type: 'school', role: 'owner',
+        permissions: ['*'], locale: 'en', timezone: 'Asia/Kolkata',
+      }],
+    });
+    if (path.endsWith('/dashboard')) return send({
+      active_students_count: 0, active_classes_count: 0, active_enrollments_count: 0,
+      unassigned_students_count: 0, pending_tasks_count: 0, latest_attendance_rate: null,
+      latest_attendance_class: null, latest_attendance_date: null, attendance_series: [],
+      classes: [], today_schedule: [], schedule_notice: null, schedule_weekday: 4, active_academic_year_id: null,
+    });
+    if (path.endsWith('/notifications')) return send({ notifications: [], unread_count: 0 });
+    if (path.endsWith('/announcements')) return send([{
+      id: 'accessibility-announcement', title: 'Family meeting', body: 'Join us in the school hall at ten.',
+      audience: 'guardians', status: 'published', published_at: '2026-11-19T09:00:00Z', scheduled_at: null,
+      author_name: 'Demo Manager', recipient_count: 3,
+    }]);
+    return send([]);
+  });
+
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'Tools' }).getByRole('button', { name: 'Announcements' }).click();
+  await expect(page.getByText('Family meeting')).toBeVisible();
+
+  for (const viewport of responsiveViewports) {
+    await page.setViewportSize(viewport);
+    await expectNoAxeViolations(page, testInfo, `manager-announcements-${viewport.name}`);
+  }
+});
+
 test('learner dashboard passes automated WCAG 2.2 AA checks on desktop and mobile', async ({ page }, testInfo) => {
   const organizationId = 'accessibility-learner-fixture';
   await page.addInitScript(() => {
