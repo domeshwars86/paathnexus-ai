@@ -202,3 +202,130 @@ test('educator attendance dialog passes automated WCAG 2.2 AA checks on desktop 
     await expectNoAxeViolations(page, testInfo, `educator-attendance-${viewport.name}`);
   }
 });
+
+test('guardian learning summary and fee invoices pass automated WCAG 2.2 AA checks', async ({ page }, testInfo) => {
+  const organizationId = 'accessibility-guardian-fixture';
+  await page.addInitScript(() => {
+    sessionStorage.setItem('paathnexus.session-token', 'accessibility-guardian-token');
+    sessionStorage.setItem('paathnexus.active-organization', 'accessibility-guardian-fixture');
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const send = (data: unknown, meta?: unknown) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data, ...(meta ? { meta } : {}) }),
+    });
+    if (path.endsWith('/auth/me')) return send({
+      user: { name: 'Mira Guardian', email: 'guardian@example.test' },
+      organizations: [{
+        id: organizationId, name: 'Sample Academy', slug: 'sample-academy', type: 'school', role: 'guardian',
+        permissions: ['workspace.view', 'attendance.read', 'courses.view', 'results.view', 'fees.view'], locale: 'en', timezone: 'Asia/Kolkata',
+      }],
+    });
+    if (path.endsWith('/guardian/students')) return send([{
+      student_id: 'accessibility-student', student_name: 'Asha Learner', student_code: 'ST-ACCESS-1', relationship: 'parent',
+      attendance: { sessions_recorded: 5, present: 4, rate_percent: 80, recent: [{ date: '2026-11-19', class_name: 'Class 6A', status: 'present' }] },
+      learning: { courses_enrolled: 2, completed_lessons: 3, total_lessons: 8, completion_percent: 38, assignments: [{ id: 'guardian-homework', title: 'Plant cell worksheet', course_title: 'Biology', due_at: '2026-12-01T00:00:00Z', submission_status: 'submitted' }] },
+      results: { assessments_completed: 1, average_percent: 80, recent: [{ title: 'Science quiz', score: 8, max_points: 10, completed_at: '2026-11-19T12:00:00Z' }], upcoming_exams: [{ title: 'Term science exam', course_title: 'Science', opens_at: '2026-12-03T04:00:00Z', closes_at: null }] },
+    }]);
+    if (path.endsWith('/fee-invoices')) return send([{
+      id: 'guardian-invoice', invoice_number: 'PN-2026-001', student_id: 'accessibility-student', student_name: 'Asha Learner', student_code: 'ST-ACCESS-1',
+      title: 'Term 1 tuition', description: 'Tuition and learning resources', amount_paise: 1250000, balance_paise: 1250000,
+      payments: [], due_on: '2026-12-15', status: 'issued', created_at: '2026-11-01T09:00:00Z',
+    }], { current_page: 1, last_page: 1, per_page: 25, total: 1 });
+    if (path.endsWith('/notifications')) return send({ unread_count: 0, items: [] });
+    return send([]);
+  });
+
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'My children', level: 1 })).toBeVisible();
+  await expect(page.getByText('Plant cell worksheet')).toBeVisible();
+  for (const viewport of responsiveViewports) {
+    await page.setViewportSize(viewport);
+    await expectNoAxeViolations(page, testInfo, `guardian-learning-${viewport.name}`);
+  }
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Fee invoices' }).click();
+  await expect(page.getByText('Term 1 tuition')).toBeVisible();
+  for (const viewport of responsiveViewports) {
+    await page.setViewportSize(viewport);
+    await expectNoAxeViolations(page, testInfo, `guardian-fees-${viewport.name}`);
+  }
+});
+
+test('assessment authoring forms pass automated WCAG 2.2 AA checks on desktop and mobile', async ({ page }, testInfo) => {
+  const organizationId = 'accessibility-assessment-authoring';
+  const courseId = 'accessibility-assessment-course';
+  await page.addInitScript(() => {
+    sessionStorage.setItem('paathnexus.session-token', 'accessibility-assessment-token');
+    sessionStorage.setItem('paathnexus.active-organization', 'accessibility-assessment-authoring');
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const send = (data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data }) });
+    if (path.endsWith('/auth/me')) return send({
+      user: { name: 'Ari Teacher', email: 'teacher@example.test' },
+      organizations: [{ id: organizationId, name: 'Sample Academy', slug: 'sample-academy', type: 'school', role: 'teacher', permissions: ['workspace.view', 'academic.view', 'reports.view', 'courses.view', 'assessments.manage'], locale: 'en', timezone: 'Asia/Kolkata' }],
+    });
+    if (path.endsWith('/dashboard')) return send({ active_students_count: 0, active_classes_count: 0, active_enrollments_count: 0, unassigned_students_count: 0, pending_tasks_count: 0, latest_attendance_rate: null, latest_attendance_class: null, latest_attendance_date: null, attendance_series: [], classes: [], today_schedule: [], schedule_notice: null, schedule_weekday: 4, active_academic_year_id: null });
+    if (path.endsWith('/courses') && route.request().method() === 'GET') return send([{ id: courseId, code: 'SCI-101', title: 'Assessment accessibility course', description: null, status: 'active', is_public: false, price_paise: 0, academic_year_id: null, academic_year: null, subject_id: null, subject: null, instructors: [], lessons_count: 0, enrollments_count: 0 }]);
+    if (path.endsWith(`/courses/${courseId}/questions`)) return send([
+      { id: 'question-choice', prompt: 'Which organelle stores genetic material?', topic: 'Cell biology', difficulty: 2, type: 'single_choice', options: [{ id: 'option-nucleus', text: 'Nucleus' }, { id: 'option-ribosome', text: 'Ribosome' }] },
+      { id: 'question-written', prompt: 'Explain the role of the cell membrane.', topic: 'Cell biology', difficulty: 3, type: 'short_answer', grading_rubric: [{ id: 'rubric-accuracy', label: 'Accuracy', weight: 100 }], options: [] },
+    ]);
+    return send([]);
+  });
+
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Courses', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Assessment accessibility course' })).toBeVisible();
+  await expect(page.getByText('Which organelle stores genetic material?')).toBeVisible();
+  await expect(page.getByText('Publish timed quiz', { exact: true })).toBeVisible();
+  for (const viewport of responsiveViewports) {
+    await page.setViewportSize(viewport);
+    await expectNoAxeViolations(page, testInfo, `assessment-authoring-${viewport.name}`);
+  }
+});
+
+test('assessment answer review and rubric grading pass automated WCAG 2.2 AA checks', async ({ page }, testInfo) => {
+  const organizationId = 'accessibility-assessment-review';
+  const courseId = 'accessibility-review-course';
+  const assessmentId = 'accessibility-review-assessment';
+  const attemptId = 'accessibility-review-attempt';
+  await page.addInitScript(() => {
+    sessionStorage.setItem('paathnexus.session-token', 'accessibility-review-token');
+    sessionStorage.setItem('paathnexus.active-organization', 'accessibility-assessment-review');
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const send = (data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data }) });
+    if (path.endsWith('/auth/me')) return send({
+      user: { name: 'Ari Teacher', email: 'teacher@example.test' },
+      organizations: [{ id: organizationId, name: 'Sample Academy', slug: 'sample-academy', type: 'school', role: 'teacher', permissions: ['workspace.view', 'academic.view', 'reports.view', 'courses.view', 'assessments.manage'], locale: 'en', timezone: 'Asia/Kolkata' }],
+    });
+    if (path.endsWith('/dashboard')) return send({ active_students_count: 0, active_classes_count: 0, active_enrollments_count: 0, unassigned_students_count: 0, pending_tasks_count: 0, latest_attendance_rate: null, latest_attendance_class: null, latest_attendance_date: null, attendance_series: [], classes: [], today_schedule: [], schedule_notice: null, schedule_weekday: 4, active_academic_year_id: null });
+    if (path.endsWith('/courses') && route.request().method() === 'GET') return send([{ id: courseId, code: 'WRITE-1', title: 'Writing and review', description: null, status: 'active', is_public: false, price_paise: 0, academic_year_id: null, academic_year: null, subject_id: null, subject: null, instructors: [], lessons_count: 0, enrollments_count: 1 }]);
+    if (path.endsWith(`/courses/${courseId}/assessments`)) return send([{ id: assessmentId, title: 'Weekly writing check', instructions: null, duration_minutes: 20, attempts_allowed: 1, randomize_questions: false, randomized_question_count: null, opens_at: null, closes_at: null, status: 'published', question_count: 1 }]);
+    if (path.endsWith(`/courses/${courseId}/assessments/${assessmentId}/analytics`)) return send({ assessment_id: assessmentId, question_pool_count: 1, randomized_question_count: null, attempt_count: 1, completed_attempt_count: 1, average_score_percent: 50, question_analytics: [{ question_id: 'question-written', prompt: 'Why does a plant cell need a membrane?', type: 'short_answer', points: 10, attempts_presented: 1, correct_count: 0, accuracy_percent: 0 }] });
+    if (path.endsWith(`/courses/${courseId}/assessments/${assessmentId}/attempts/${attemptId}/review`)) return send({
+      attempt: { id: attemptId, attempt_number: 1, status: 'submitted', review_status: 'pending', score: 5, max_points: 10, started_at: '2026-11-19T09:00:00Z', expires_at: null, submitted_at: '2026-11-19T09:15:00Z', student_name: 'Asha Learner', student_code: 'ST-ACCESS-1' },
+      questions: [{ question_id: 'question-written', prompt: 'Why does a plant cell need a membrane?', type: 'short_answer', points: 10, points_awarded: 0, is_correct: null, response_text: 'It controls what enters and leaves the cell.', grader_feedback: null, graded_at: null, grading_rubric: [{ id: 'rubric-accuracy', label: 'Scientific accuracy', weight: 60 }, { id: 'rubric-explanation', label: 'Clear explanation', weight: 40 }], rubric_scores: [], selected_options: [], correct_options: [] }],
+    });
+    if (path.endsWith(`/courses/${courseId}/assessments/${assessmentId}/attempts`)) return send([{ id: attemptId, attempt_number: 1, status: 'submitted', review_status: 'pending', score: 5, max_points: 10, started_at: '2026-11-19T09:00:00Z', expires_at: null, submitted_at: '2026-11-19T09:15:00Z', student_id: 'accessibility-student', student_name: 'Asha Learner', student_code: 'ST-ACCESS-1' }]);
+    return send([]);
+  });
+
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Courses', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Writing and review' })).toBeVisible();
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+  await expect(page.getByRole('heading', { name: 'Review submitted answers' })).toBeVisible();
+  await page.getByRole('button', { name: 'Review answers' }).click();
+  await expect(page.getByText('Scientific accuracy')).toBeVisible();
+  for (const viewport of responsiveViewports) {
+    await page.setViewportSize(viewport);
+    await expectNoAxeViolations(page, testInfo, `assessment-review-${viewport.name}`);
+  }
+});

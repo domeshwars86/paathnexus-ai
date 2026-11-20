@@ -2,12 +2,19 @@
 
 Updated: 2026-11-20
 
+## Milestone 0.241 — Scan guardian and assessment workflows
+- **Finding:** Axe coverage did not yet include guardian learning/billing or assessment authoring/review. The assessment scans found muted labels below WCAG contrast targets and a horizontally scrollable analytics table that was not keyboard-focusable.
+- **Fix:** Added desktop/mobile scans for the guardian family summary and invoices, assessment authoring, and answer review with rubric grading. Darkened muted dashboard and assessment labels; made the question-accuracy table a labeled, keyboard-focusable region.
+- **Verification:** Accessibility suite passed (8 scenarios, 18 viewport scans); full Chromium suite passed (46 tests); Vitest passed (12 tests); `npm run build` passed; production PWA offline test passed (1 test).
+- **Limitations:** Automated coverage still does not include every teacher/admin workflow or dialog. Manual screen-reader, keyboard-only, cross-browser, and physical-device checks remain pending.
+- **Next:** Extend accessibility scans to remaining teacher/admin workflows, then continue API authorization, PostgreSQL, and release-readiness checks.
+
 ## Milestone 0.240 — Scan learner and educator attendance states
 - **Finding:** The initial axe pass covered public/auth screens and the owner dashboard, but not a learner dashboard or an educator’s attendance-entry dialog. These states exposed additional low-contrast attendance and roster details.
 - **Fix:** Extended automated checks to the learner dashboard and attendance dialog at desktop and mobile sizes. Darkened student attendance summaries, roster identifiers, form labels, dialog instructions, and neutral controls to maintain text contrast without changing surface colors or layout.
 - **Verification:** The accessibility suite passed (5 scenarios, 10 viewport scans); all Chromium tests passed (43 tests); `npm run build` passed; the production PWA offline test passed (1 test).
 - **Limitations:** These scans cover public home, sign-in, owner dashboard, learner dashboard, and educator attendance dialog. Guardian views, other teacher/admin modules, remaining dialogs, manual screen-reader checks, and physical devices remain pending.
-- **Next:** Scan guardian learning/billing views and assessment authoring/review states, then continue API authorization and release-readiness checks.
+- **Next:** Extend axe scans to guardian learning/billing and assessment authoring/review states, then continue API authorization and release-readiness checks.
 
 ## Milestone 0.239 — Add automated responsive accessibility scans
 - **Finding:** Responsive, keyboard, and selected contrast checks existed, but automated WCAG rule scans did not cover the public page, sign-in, or an authenticated workspace dashboard. The first scan found low-contrast workspace metadata, nav labels, and dashboard captions.

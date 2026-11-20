@@ -43,9 +43,29 @@
 .app-shell .task-message,
 .app-shell .class-card-heading span,
 .app-shell .form-hint,
+.app-shell .course-choice small,
+.app-shell .assessment-question-choice > label:first-child small,
+.app-shell .question-sampling-control > small,
+.app-shell .course-lesson-list > .academic-empty,
+.app-shell .course-assignment-panel > .academic-empty,
+.app-shell .short-answer-grade-form > label,
+.app-shell .rubric-grade-fields label,
+.app-shell .assessment-review-question > small,
+.app-shell .assessment-review-question > div > span:not(.is-correct):not(.is-incorrect),
+.app-shell .assessment-review-controls label,
+.app-shell .assessment-review small,
+.app-shell .assessment-analytics span,
+.app-shell .assessment-analytics-metrics small,
+.app-shell .assessment-analytics-heading small,
+.app-shell .assessment-analytics label,
+.app-shell .assessment-analytics-table th,
 .app-shell footer > span,
 .app-shell footer > button {
   color: #5f6275;
+}
+
+.app-shell .assignment-status.graded {
+  color: #176b4a;
 }
 
 .app-shell .avatar {

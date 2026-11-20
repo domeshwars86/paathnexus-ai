@@ -168,7 +168,7 @@ export function AssessmentAnalyticsPanel({ token, organizationId, courseId, asse
           <article><span>Average score</span><strong>{analytics.average_score_percent === null ? '—' : `${analytics.average_score_percent}%`}</strong><small>Of sampled maximum points</small></article>
           <article><span>Question pool</span><strong>{analytics.question_pool_count}</strong><small>{analytics.randomized_question_count ? `${analytics.randomized_question_count} per attempt` : 'Full pool per attempt'}</small></article>
         </div>
-        <div className="assessment-analytics-table-wrap"><table className="assessment-analytics-table">
+        <div className="assessment-analytics-table-wrap" role="region" aria-label="Question accuracy results" tabIndex={0}><table className="assessment-analytics-table">
           <thead><tr><th>Question</th><th>Points</th><th>Presented</th><th>Correct</th><th>Accuracy</th></tr></thead>
           <tbody>{analytics.question_analytics.map((question) => <tr key={question.question_id}>
             <td>{question.prompt}</td><td>{question.points}</td><td>{question.attempts_presented}</td><td>{question.correct_count}</td>
