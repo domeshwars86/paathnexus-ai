@@ -2,6 +2,13 @@
 
 Updated: 2026-11-20
 
+## Milestone 0.244 — Enforce teacher course scope for AI tutor context
+- **Finding:** A teacher with `courses.manage` could attach another teacher’s private course and lesson to an AI tutor request. The course-manager permission bypassed enrollment checks, and the tutor did not apply the existing created-or-assigned teacher course scope before forwarding lesson content.
+- **Fix:** Resolve tutor course context through `TeacherCourseScope`, retaining manager and learner access while restricting teachers to courses they created or were assigned. Added a regression proving an out-of-scope request returns 404 before provider traffic or usage metering.
+- **Verification:** Focused AI tutor tests passed (4 tests, 54 assertions); full Laravel suite passed (118 tests, 2,613 assertions); PHP syntax checks and `git diff --check` passed.
+- **Limitations:** This closes lesson-context access for tutor requests; provider retention review and live-provider adversarial evaluation remain pending. Hosted PostgreSQL and deployment verification also remain pending.
+- **Next:** Continue route-by-route authorization and tenant-scope review, then verify hosted PostgreSQL and release gates.
+
 ## Milestone 0.243 — Re-check announcement audiences after role changes
 - **Finding:** A member who changed from teacher to student could still read a previously delivered teachers-only announcement from the notification feed, and the hidden item counted as unread.
 - **Fix:** Re-evaluate the member’s current role when listing announcement notifications and counting unread items. The mark-read endpoint now also returns 404 for notifications outside the member’s current audience. Added a regression covering role downgrade, hidden feed item, unread total, mark-read denial, and visibility for a current teacher.

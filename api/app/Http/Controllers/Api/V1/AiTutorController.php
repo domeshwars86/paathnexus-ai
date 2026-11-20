@@ -17,6 +17,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use App\Services\PlanEntitlements;
 use App\Services\PlatformFeatureFlags;
+use App\Services\TeacherCourseScope;
 use RuntimeException;
 use Throwable;
 
@@ -30,7 +31,7 @@ class AiTutorController extends Controller
         'practice_exercises', 'homework_questions', 'revision_notes', 'rubric',
     ];
 
-    public function ask(Request $request, string $organizationId, PlatformFeatureFlags $featureFlags): JsonResponse
+    public function ask(Request $request, string $organizationId, PlatformFeatureFlags $featureFlags, TeacherCourseScope $teacherCourseScope): JsonResponse
     {
         $organization = $request->user()->organizations()->wherePivot('status', 'active')
             ->where('organizations.status', 'active')->where('organizations.id', $organizationId)->firstOrFail();
@@ -50,8 +51,8 @@ class AiTutorController extends Controller
         $course = null;
         $lesson = null;
         if (! empty($validated['course_id'])) {
-            $course = Course::query()->where('organization_id', $organization->id)->where('status', 'active')
-                ->whereKey($validated['course_id'])->firstOrFail();
+            $course = $teacherCourseScope->courses($organization, $request->user())
+                ->where('courses.status', 'active')->whereKey($validated['course_id'])->firstOrFail();
             if (! $canManageCourses) {
                 $student = StudentProfile::query()->where('organization_id', $organization->id)->where('user_id', $request->user()->id)->where('status', 'active')->firstOrFail();
                 abort_unless($course->enrollments()->where('student_id', $student->id)->where('status', 'active')->exists(), 404);

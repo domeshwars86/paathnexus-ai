@@ -16,6 +16,39 @@ class AiTutorTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_teacher_cannot_send_another_teachers_lesson_to_the_ai_provider(): void
+    {
+        config()->set('ai.api_key', 'test-provider-key');
+        config()->set('ai.model', 'test-tutor-model');
+        config()->set('ai.base_url', 'https://ai.test/v1');
+        Http::fake();
+
+        $teacher = User::factory()->create();
+        $courseOwner = User::factory()->create();
+        $organization = Organization::create([
+            'name' => 'Teacher Tutor Scope Workspace', 'slug' => 'teacher-tutor-scope-workspace', 'type' => 'school', 'status' => 'active',
+        ]);
+        $organization->users()->attach($teacher, ['role' => 'teacher', 'status' => 'active', 'joined_at' => now()]);
+        $organization->users()->attach($courseOwner, ['role' => 'teacher', 'status' => 'active', 'joined_at' => now()]);
+        $course = Course::create([
+            'organization_id' => $organization->id, 'code' => 'PRIVATE-AI', 'title' => 'Another teacher course',
+            'status' => 'active', 'created_by' => $courseOwner->id,
+        ]);
+        $lesson = CourseLesson::create([
+            'organization_id' => $organization->id, 'course_id' => $course->id,
+            'title' => 'Private lesson', 'content' => 'Synthetic private lesson content.',
+            'position' => 1, 'status' => 'active', 'created_by' => $courseOwner->id,
+        ]);
+
+        $this->assertTrue($teacher->can('manageCourses', $organization));
+        $this->actingAs($teacher, 'sanctum')->postJson('/api/v1/organizations/'.$organization->id.'/ai/tutor', [
+            'question' => 'Explain this lesson', 'course_id' => $course->id, 'lesson_id' => $lesson->id,
+        ])->assertNotFound();
+
+        Http::assertNothingSent();
+        $this->assertDatabaseCount('ai_usage_records', 0);
+    }
+
     public function test_tutor_uses_only_an_authorized_lesson_and_tracks_quota_without_storing_prompts(): void
     {
         config()->set('ai.api_key', 'test-provider-key');
