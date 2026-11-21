@@ -1708,6 +1708,7 @@ function InvitationsPanel({ token, organization, onNavigate }: { token: string; 
 }
 
 function GuardianLinksPanel({ token, organization }: { token: string; organization: Organization }) {
+  const { t } = useLocale();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [guardians, setGuardians] = useState<GuardianCandidate[]>([]);
   const [links, setLinks] = useState<GuardianStudentLink[]>([]);
@@ -1727,7 +1728,7 @@ function GuardianLinksPanel({ token, organization }: { token: string; organizati
       setStudents(nextStudents); setGuardians(nextGuardians); setLinks(nextLinks);
       setStudentId((current) => nextStudents.some((student) => student.id === current) ? current : nextStudents[0]?.id ?? '');
       setGuardianId((current) => nextGuardians.some((guardian) => guardian.id.toString() === current) ? current : nextGuardians[0]?.id?.toString() ?? '');
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not load guardian links.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('guardianAdmin.loadError')); }
     finally { setLoading(false); }
   }
 
@@ -1737,21 +1738,21 @@ function GuardianLinksPanel({ token, organization }: { token: string; organizati
     event.preventDefault(); if (!studentId || !guardianId) return;
     setSaving(true); setError('');
     try { await linkGuardianStudent(token, organization.id, { student_id: studentId, guardian_user_id: Number(guardianId), relationship }); await refresh(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not link guardian.'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : t('guardianAdmin.linkError')); }
     finally { setSaving(false); }
   }
 
   async function remove(linkId: string) {
     setSaving(true); setError('');
     try { await endGuardianLink(token, organization.id, linkId); setLinks((current) => current.filter((link) => link.id !== linkId)); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not end guardian access.'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : t('guardianAdmin.endError')); }
     finally { setSaving(false); }
   }
 
-  return <section id="guardian-links" className="panel academic-panel guardian-admin-panel"><div className="panel-heading"><div><div className="eyebrow">FAMILY ACCESS</div><h2>Guardian links</h2><p>Give an active guardian account access to one student’s attendance and learning summaries.</p></div></div>
+  return <section id="guardian-links" className="panel academic-panel guardian-admin-panel"><div className="panel-heading"><div><div className="eyebrow">{t('guardianAdmin.eyebrow')}</div><h2>{t('guardianAdmin.title')}</h2><p>{t('guardianAdmin.description')}</p></div></div>
     {error && <div className="academic-error" role="alert">{error}</div>}
-    <form className="academic-form guardian-link-form" onSubmit={(event) => void submit(event)}><strong>Link a guardian</strong><label>Student<select required value={studentId} onChange={(event) => setStudentId(event.target.value)}><option value="">Choose a student…</option>{students.map((student) => <option key={student.id} value={student.id}>{student.name} · {student.student_code}</option>)}</select></label><label>Guardian account<select required value={guardianId} onChange={(event) => setGuardianId(event.target.value)}><option value="">Choose a guardian…</option>{guardians.map((guardian) => <option key={guardian.id} value={guardian.id}>{guardian.name} · {guardian.email}</option>)}</select></label><label>Relationship<select value={relationship} onChange={(event) => setRelationship(event.target.value)}><option value="parent">Parent</option><option value="guardian">Guardian</option><option value="grandparent">Grandparent</option><option value="caregiver">Caregiver</option><option value="other">Other</option></select></label><button className="task-submit" disabled={saving || loading || !studentId || !guardianId}>{saving ? 'Saving…' : 'Save guardian link'}</button><small className="form-hint">Only active workspace members with the guardian role can be linked.</small></form>
-    <div className="guardian-link-list"><div className="course-progress-heading"><strong>Active links</strong><span>{links.length}</span></div>{loading ? <div className="task-message">Loading guardian links…</div> : links.length ? links.map((link) => <div className="guardian-link-row" key={link.id}><span><strong>{link.student_name}</strong><small>{link.student_code} · {link.guardian_name} ({link.relationship}) · {link.guardian_email}</small></span><button type="button" className="task-cancel" disabled={saving} onClick={() => void remove(link.id)}>End access</button></div>) : <div className="academic-empty">No active guardian links. Add guardian memberships first if needed.</div>}</div>
+    <form className="academic-form guardian-link-form" onSubmit={(event) => void submit(event)}><strong>{t('guardianAdmin.linkTitle')}</strong><label>{t('guardian.student')}<select required value={studentId} onChange={(event) => setStudentId(event.target.value)}><option value="">{t('guardianAdmin.chooseStudent')}</option>{students.map((student) => <option key={student.id} value={student.id}>{student.name} · {student.student_code}</option>)}</select></label><label>{t('guardianAdmin.guardianAccount')}<select required value={guardianId} onChange={(event) => setGuardianId(event.target.value)}><option value="">{t('guardianAdmin.chooseGuardian')}</option>{guardians.map((guardian) => <option key={guardian.id} value={guardian.id}>{guardian.name} · {guardian.email}</option>)}</select></label><label>{t('guardian.relationship')}<select value={relationship} onChange={(event) => setRelationship(event.target.value)}><option value="parent">{t('guardianAdmin.parent')}</option><option value="guardian">{t('guardianAdmin.guardian')}</option><option value="grandparent">{t('guardianAdmin.grandparent')}</option><option value="caregiver">{t('guardianAdmin.caregiver')}</option><option value="other">{t('guardianAdmin.other')}</option></select></label><button className="task-submit" disabled={saving || loading || !studentId || !guardianId}>{saving ? t('guardianAdmin.saving') : t('guardianAdmin.saveLink')}</button><small className="form-hint">{t('guardianAdmin.memberHint')}</small></form>
+    <div className="guardian-link-list"><div className="course-progress-heading"><strong>{t('guardianAdmin.activeLinks')}</strong><span>{links.length}</span></div>{loading ? <div className="task-message">{t('guardianAdmin.loading')}</div> : links.length ? links.map((link) => <div className="guardian-link-row" key={link.id}><span><strong>{link.student_name}</strong><small>{link.student_code} · {link.guardian_name} ({link.relationship}) · {link.guardian_email}</small></span><button type="button" className="task-cancel" disabled={saving} onClick={() => void remove(link.id)}>{t('guardianAdmin.endAccess')}</button></div>) : <div className="academic-empty">{t('guardianAdmin.noLinks')}</div>}</div>
   </section>;
 }
 

@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.271 — Localize guardian-link management
+- **Finding:** Managers could link active guardian accounts to student summaries, but that form and its active-link controls remained English-only while the rest of the family portal supported English and Hindi.
+- **Fix:** Added shared English/Hindi translations for the guardian-link form, relationship choices, eligibility hint, loading/empty states, end-access action, and generic fallback errors. Existing permission checks and API payloads are unchanged.
+- **Verification:** Full Chromium suite passed (56 tests), including a new Hindi browser workflow for populated guardian/student selectors, relationship selection, form labels, and empty state. Vitest passed (12 tests); TypeScript and production build passed. No backend code changed; the complete Laravel suite immediately before this UI milestone passed (130 tests, 2,786 assertions).
+- **Limitations:** Server validation messages and most other workspace content are still not localized. Authored names and relationship data continue to display as entered.
+- **Next:** Translate the remaining academic/course authoring forms and common workspace error states; then continue the ERP/LMS and release-readiness backlog.
+
 ## Milestone 0.270 — Add shareable public course pages
 - **Finding:** Course discovery exposed summaries and a quick-view dialog, but visitors could not share a direct course URL. Instructor summaries on course listings could also retain profiles after the account or teacher membership became inactive.
 - **Fix:** Added a public course detail endpoint and responsive `/courses/{id}` page linked from catalog cards. The endpoint rechecks active/public course and workspace state plus moderation; it returns price, active lesson count, and only public instructor fields, never lesson content or learner data. Catalog instructor summaries now require an active linked user and teacher membership. Detail pages disclose when paid checkout is unavailable and direct learners through the existing sign-in/registration path.

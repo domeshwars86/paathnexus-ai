@@ -687,6 +687,41 @@ test('accepted learner invitation opens the learner account-linking workflow', a
   await expect(page.getByRole('heading', { name: 'Guardian links' })).toBeInViewport();
 });
 
+test('guardian-link management controls follow the saved Hindi locale', async ({ page }) => {
+  const organizationId = 'guardian-link-locale-workspace';
+  await page.addInitScript(() => {
+    localStorage.setItem('paathnexus.locale', 'hi');
+    sessionStorage.setItem('paathnexus.session-token', 'guardian-link-locale-token');
+    sessionStorage.setItem('paathnexus.active-organization', 'guardian-link-locale-workspace');
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const send = (data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data }) });
+    if (path.endsWith('/auth/me')) return send({
+      user: { name: 'Asha Manager', email: 'asha@example.test' },
+      organizations: [{ id: organizationId, name: 'Hindi Academy', slug: 'hindi-academy', type: 'school', role: 'educator', permissions: ['workspace.view', 'academic.view', 'academic.manage', 'members.manage'], locale: 'hi', timezone: 'Asia/Kolkata' }],
+    });
+    if (path.endsWith('/dashboard')) return send({ active_students_count: 1, active_classes_count: 0, active_enrollments_count: 0, unassigned_students_count: 0, pending_tasks_count: 0, latest_attendance_rate: null, latest_attendance_class: null, latest_attendance_date: null, attendance_series: [], classes: [], today_schedule: [], schedule_notice: null, schedule_weekday: 4 });
+    if (path.endsWith('/students')) return send([{ id: 'student-1', student_code: 'S-01', name: 'Aarav' }]);
+    if (path.endsWith('/guardian-candidates')) return send([{ id: 42, name: 'Meera Rao', email: 'meera@example.test' }]);
+    if (path.endsWith('/guardian-student-links') || path.endsWith('/invitations')) return send([]);
+    return send([]);
+  });
+
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'मुख्य नेविगेशन' }).getByRole('button', { name: 'विद्यार्थी' }).click();
+  const panel = page.locator('#guardian-links');
+  await panel.scrollIntoViewIfNeeded();
+  await expect(panel.getByRole('heading', { name: 'अभिभावक लिंक' })).toBeVisible();
+  await expect(panel.getByLabel('विद्यार्थी')).toHaveValue('student-1');
+  await expect(panel.getByLabel('अभिभावक खाता')).toHaveValue('42');
+  await panel.getByLabel('संबंध').selectOption('grandparent');
+  await expect(panel.getByLabel('संबंध')).toHaveValue('grandparent');
+  await expect(panel.getByRole('button', { name: 'अभिभावक लिंक सहेजें' })).toBeVisible();
+  await expect(panel.getByText('केवल अभिभावक भूमिका वाले सक्रिय कार्यस्थान सदस्य ही जोड़े जा सकते हैं।')).toBeVisible();
+  await expect(panel.getByText('कोई सक्रिय अभिभावक लिंक नहीं है। ज़रूरत हो तो पहले अभिभावक सदस्य जोड़ें।')).toBeVisible();
+});
+
 test('workspace managers can configure narrowed admin and educator profiles', async ({ page }) => {
   const organizationId = 'custom-manager-roles-workspace';
   await page.setViewportSize({ width: 1280, height: 1000 });
