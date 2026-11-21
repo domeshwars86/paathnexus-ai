@@ -1006,14 +1006,15 @@ test('learner can complete a lesson and submit a quiz using isolated API fixture
   await expect.poll(() => lessonCompleted).toBe(true);
 
   await expect(page.getByText('Cell knowledge check', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Start quiz' }).click();
+  await page.getByRole('button', { name: 'हिन्दी' }).click();
+  await page.getByRole('button', { name: 'क्विज़ शुरू करें' }).click();
   await expect(page.getByText('What is the basic unit of life?')).toBeVisible();
+  await expect(page.getByText(/समय सीमा .* पर समाप्त होगी/)).toBeVisible();
   await page.getByLabel('The cell', { exact: true }).click();
   await expect.poll(() => answerSaved).toBe(true);
-  await page.getByRole('button', { name: 'Submit quiz' }).click();
+  await page.getByRole('button', { name: 'क्विज़ जमा करें' }).click();
   await expect.poll(() => quizSubmitted).toBe(true);
-  await expect(page.getByText('Attempt 1: 1 / 1 points')).toBeVisible();
-  await page.getByRole('button', { name: 'हिन्दी' }).click();
+  await expect(page.getByText('प्रयास 1: 1 / 1 अंक')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'मेरे उत्तर और प्रतिक्रिया' })).toBeVisible();
   await page.getByRole('button', { name: 'उत्तर और प्रतिक्रिया देखें' }).click();
   await expect(page.getByText('आपका उत्तर: The cell')).toBeVisible();

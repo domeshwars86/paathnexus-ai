@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.279 — Localize learner quiz-taking and assessment status
+- **Finding:** Learners could see translated quiz results, but active quiz instructions, actions, time limits, scheduling labels, and attempt statuses switched back to English.
+- **Fix:** Added English/Hindi translations for quiz-taking prompts and actions, autosave guidance, time-limit/date formatting, assessment scheduling and availability, draft/published labels, and learner/educator attempt statuses. The learner quiz journey now switches to Hindi before starting the quiz and verifies the translated lifecycle and result status. Existing assessment permissions and API values are unchanged.
+- **Verification:** TypeScript and production build passed; Vitest passed (12 tests); the focused learner lesson/quiz browser journey passed. The attempted full Chromium run could not complete: its process stopped producing output and no Node/browser process remained. The preceding milestone's full 57-test Chromium suite passed.
+- **Limitations:** Question import and most other workspace content, API validation messages, authored names, and provider/generated content remain untranslated.
+- **Next:** Localize question import and remaining high-use workspace interactions, then continue ERP/LMS and release-readiness work.
+
 ## Milestone 0.278 — Localize assessment analytics and educator review
 - **Finding:** Educators could filter question accuracy, export grades, inspect submitted answers, and grade written responses, but those analytics and review controls were English-only.
 - **Fix:** Added English/Hindi translations for analytics filters, metrics, tables, attempt selection, correctness/pending states, learner answers, rubric scoring, feedback, CSV actions, and generic fallback errors. Existing server-side review permissions and grading data are unchanged.
