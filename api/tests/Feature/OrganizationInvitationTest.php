@@ -45,9 +45,16 @@ class OrganizationInvitationTest extends TestCase
         $existingInvite = $this->actingAs($owner, 'sanctum')->postJson('/api/v1/organizations/'.$organization->id.'/invitations', [
             'email' => $existing->email, 'role' => 'teacher',
         ])->assertCreated()->json();
+        $staleToken = str_repeat('s', 64);
+        OrganizationInvitation::create([
+            'organization_id' => $organization->id, 'email' => $existing->email, 'role' => 'student',
+            'token_hash' => hash('sha256', $staleToken), 'invited_by' => $owner->id, 'expires_at' => now()->addDays(7),
+        ]);
         $this->actingAs($existing, 'sanctum')->postJson('/api/v1/invitations/accept', ['token' => $existingInvite['token']])->assertOk()
             ->assertJsonPath('data.organization.role', 'teacher');
         $this->actingAs($existing, 'sanctum')->postJson('/api/v1/invitations/accept', ['token' => $existingInvite['token']])->assertStatus(410);
+        $this->actingAs($existing, 'sanctum')->postJson('/api/v1/invitations/accept', ['token' => $staleToken])->assertStatus(409);
+        $this->assertDatabaseHas('organization_user', ['organization_id' => $organization->id, 'user_id' => $existing->id, 'role' => 'teacher', 'status' => 'active']);
     }
 
     public function test_admin_can_revoke_pending_invitation_and_cannot_invite_privileged_roles(): void
@@ -61,6 +68,9 @@ class OrganizationInvitationTest extends TestCase
         $invite = $this->actingAs($owner, 'sanctum')->postJson('/api/v1/organizations/'.$organization->id.'/invitations', [
             'email' => 'guardian@example.test', 'role' => 'guardian',
         ])->assertCreated()->json();
+        $this->actingAs($owner, 'sanctum')->postJson('/api/v1/organizations/'.$organization->id.'/invitations', [
+            'email' => 'guardian@example.test', 'role' => 'student',
+        ])->assertStatus(409);
         $this->actingAs($owner, 'sanctum')->deleteJson('/api/v1/organizations/'.$organization->id.'/invitations/'.$invite['data']['id'])
             ->assertOk()->assertJsonPath('data.status', 'revoked');
         $this->postJson('/api/v1/auth/register-invitation', [

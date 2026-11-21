@@ -1,6 +1,12 @@
 # Implementation status
 
-Updated: 2026-11-20
+Updated: 2026-11-21
+
+## Milestone 0.249 — Serialize workspace invitations and protect active member roles
+- **Finding:** Concurrent invitation requests could create multiple active tokens for one email in a workspace. Accepting a later outstanding token could overwrite the role of a person who had already become an active member.
+- **Fix:** Invitation creation and acceptance now lock the active organization first, then recheck invitation and membership state inside transactions. Acceptance rejects a token when the target is already an active member. Added regressions for duplicate pending creation and stale-token role changes.
+- **Verification:** Focused `OrganizationInvitationTest` passed (2 tests, 25 assertions); full Laravel suite passed (121 tests, 2,639 assertions); PHP syntax checks and `git diff --check` passed. PostgreSQL lock concurrency remains a CI verification item.
+- **Next:** Run the full API suite, then continue tenant-scope and release-readiness audits.
 
 ## Milestone 0.248 — Serialize invoice voiding with payment capture
 - **Finding:** Invoice voiding checked for payments and updated status without locking, allowing it to race with manual or signed-webhook capture and produce a void invoice with a recorded payment.

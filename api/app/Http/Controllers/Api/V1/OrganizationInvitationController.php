@@ -34,18 +34,23 @@ class OrganizationInvitationController extends Controller
 
         $email = $validated['email'];
         abort_if($request->user()->email === $email, 422, 'You cannot invite your own account.');
-        $existing = $organization->users()->where('users.email', $email)->first();
-        abort_if($existing && $existing->pivot->status === 'active', 409, 'This person is already an active workspace member.');
-        abort_if(OrganizationInvitation::query()->where('organization_id', $organization->id)->where('email', $email)
-            ->whereNull('accepted_at')->whereNull('revoked_at')->where('expires_at', '>', now())->exists(), 409,
-            'There is already an active invitation for this email.');
-
         $plainToken = Str::random(64);
-        $invite = OrganizationInvitation::create([
-            'organization_id' => $organization->id, 'email' => $email, 'role' => $validated['role'],
-            'token_hash' => hash('sha256', $plainToken), 'invited_by' => $request->user()->id,
-            'expires_at' => now()->addDays(7),
-        ])->load('inviter:id,name');
+        $invite = DB::transaction(function () use ($organization, $email, $validated, $request, $plainToken): OrganizationInvitation {
+            // Serialize invitation creation with other invitations and acceptance for this workspace.
+            $lockedOrganization = Organization::query()->whereKey($organization->id)
+                ->where('status', 'active')->lockForUpdate()->firstOrFail();
+            $existing = $lockedOrganization->users()->where('users.email', $email)->first();
+            abort_if($existing && $existing->pivot->status === 'active', 409, 'This person is already an active workspace member.');
+            abort_if(OrganizationInvitation::query()->where('organization_id', $lockedOrganization->id)->where('email', $email)
+                ->whereNull('accepted_at')->whereNull('revoked_at')->where('expires_at', '>', now())->exists(), 409,
+                'There is already an active invitation for this email.');
+
+            return OrganizationInvitation::create([
+                'organization_id' => $lockedOrganization->id, 'email' => $email, 'role' => $validated['role'],
+                'token_hash' => hash('sha256', $plainToken), 'invited_by' => $request->user()->id,
+                'expires_at' => now()->addDays(7),
+            ])->load('inviter:id,name');
+        });
 
         return response()->json(['data' => $this->data($invite), 'token' => $plainToken], 201);
     }
@@ -69,11 +74,14 @@ class OrganizationInvitationController extends Controller
         abort_unless(hash_equals($invite->email, Str::lower($request->user()->email)), 403, 'Sign in using the email address this invitation was sent to.');
 
         $organization = Organization::query()->whereKey($invite->organization_id)->where('status', 'active')->firstOrFail();
-        DB::transaction(function () use ($invite, $organization, $request): void {
+        DB::transaction(function () use ($invite, $request, $organization): void {
+            $organization = Organization::query()->whereKey($invite->organization_id)
+                ->where('status', 'active')->lockForUpdate()->firstOrFail();
             $locked = OrganizationInvitation::query()->whereKey($invite->id)->lockForUpdate()->firstOrFail();
             abort_if($locked->accepted_at || $locked->revoked_at || $locked->expires_at->isPast(), 410, 'This invitation is no longer valid.');
             $membership = DB::table('organization_user')->where('organization_id', $organization->id)->where('user_id', $request->user()->id)->first();
             if ($membership) {
+                abort_if($membership->status === 'active', 409, 'This person is already an active workspace member.');
                 DB::table('organization_user')->where('id', $membership->id)->update([
                     'role' => $locked->role, 'custom_role_id' => null, 'status' => 'active', 'joined_at' => now(), 'updated_at' => now(),
                 ]);
