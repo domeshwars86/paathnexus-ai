@@ -1634,6 +1634,13 @@ test('educator can create a course and add its first lesson', async ({ page }) =
   await expect(enrollmentForm.getByLabel('विद्यार्थी')).toBeVisible();
   await expect(enrollmentForm.getByRole('button', { name: 'नामांकन करें' })).toBeVisible();
   await expect(enrollmentForm.getByText('0 विद्यार्थी नामांकित हैं।')).toBeVisible();
+  const assignmentForm = page.locator('.assignment-create-form');
+  await expect(assignmentForm.getByText('असाइनमेंट बनाएँ')).toBeVisible();
+  await expect(assignmentForm.getByLabel('शीर्षक')).toBeVisible();
+  await expect(assignmentForm.getByLabel('निर्देश')).toBeVisible();
+  await expect(assignmentForm.getByLabel('अंक')).toBeVisible();
+  await expect(assignmentForm.getByLabel('जमा करने की तारीख (Asia/Kolkata)')).toBeVisible();
+  await expect(assignmentForm.getByRole('button', { name: 'असाइनमेंट प्रकाशित करें' })).toBeVisible();
   await page.getByRole('button', { name: 'Edit lesson' }).click();
   const lessonEditForm = page.locator('.lesson-edit-form');
   await expect(lessonEditForm.getByLabel('पहले पूरे किए जाने वाले पाठ')).toBeVisible();

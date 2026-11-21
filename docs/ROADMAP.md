@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Sprint sequence
+Milestone 0.275 localizes course assignment authoring in English and Hindi, including points, workspace-timezone due-date guidance, allowed resource files, publish state, and fallback errors. The full 57-test Chromium suite, 12 Vitest tests, and production build pass. Next: localize assessment authoring and review forms.
 Milestone 0.274 localizes instructor assignment and learner enrollment forms in English and Hindi, including accessible labels, selection guidance, learner counts, and fallback errors. The full 57-test Chromium suite, 12 Vitest tests, and production build pass. Next: localize assignment and assessment authoring.
 Milestone 0.273 localizes course editing, lesson creation, and lesson editing in English and Hindi, including publication/discovery settings, lesson resources and prerequisites, and save/cancel states. The 57-test Chromium suite, 12 Vitest tests, and production build pass. Next: localize instructor assignment and enrollment forms, followed by assignment and assessment authoring.
 Milestone 0.272 localizes course creation in English and Hindi, including field labels, pricing guidance, saving state, and fallback errors; its browser flow confirms unchanged API values and paise conversion. All 57 Chromium tests pass, as do Vitest (12) and the production build. The focused Laravel verification suite passes (3 tests, 12 assertions), and local verification is disabled. Next: translate remaining course edit, lesson, assignment, and assessment forms.

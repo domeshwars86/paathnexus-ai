@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.275 — Localize assignment authoring
+- **Finding:** Educators creating course assignments saw English-only fields and file guidance even when the workspace used Hindi.
+- **Fix:** Localized assignment title/instructions, points, workspace-timezone due-date guidance, resource-file limits, selected-file count, publish state, and invalid-time/create fallback errors. Assignment data and upload limits are unchanged.
+- **Verification:** Full Chromium suite passed (57 tests), including the Hindi assignment form; Vitest passed (12 tests); TypeScript and production build passed. No backend code changed.
+- **Limitations:** Assessment authoring and assignment review/submission messaging still have English-only content.
+- **Next:** Localize assessment authoring and review forms, then continue the ERP/LMS and release-readiness backlog.
+
 ## Milestone 0.274 — Localize instructor assignment and enrollment
 - **Finding:** Course instructors and learner enrollment were manageable from the course library but their controls and empty-state count remained English-only.
 - **Fix:** Added English/Hindi copy for instructor assignments, multi-select guidance, enrollment fields and actions, live enrollment counts, and generic fallback errors. Server authorization and request data are unchanged.
