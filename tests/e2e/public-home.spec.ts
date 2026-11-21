@@ -1294,6 +1294,7 @@ test('guardian with results access sees a future exam for their linked learner',
 test('assessment-only teacher can author quizzes without course-edit controls', async ({ page }) => {
   const organizationId = 'assessment-teacher-org-fixture';
   const courseId = 'assessment-teacher-course-fixture';
+  let importedQuestions = false;
   await page.addInitScript(() => {
     localStorage.setItem('paathnexus.locale', 'hi');
     sessionStorage.setItem('paathnexus.session-token', 'assessment-teacher-fixture-token');
@@ -1305,6 +1306,11 @@ test('assessment-only teacher can author quizzes without course-edit controls', 
     if (path.endsWith('/auth/me')) return send({ user: { name: 'Ari Teacher', email: 'ari@example.test' }, organizations: [{ id: organizationId, name: 'Fixture Academy', slug: 'fixture-academy', type: 'school', role: 'teacher', permissions: ['workspace.view', 'academic.view', 'reports.view', 'courses.view', 'assessments.manage'], locale: 'en', timezone: 'Asia/Kolkata' }] });
     if (path.endsWith('/dashboard')) return send({ active_students_count: 0, active_classes_count: 0, active_enrollments_count: 0, unassigned_students_count: 0, pending_tasks_count: 0, latest_attendance_rate: null, latest_attendance_class: null, latest_attendance_date: null, attendance_series: [], classes: [], today_schedule: [], schedule_notice: null, schedule_weekday: 4, active_academic_year_id: null });
     if (path.endsWith('/courses') && route.request().method() === 'GET') return send([{ id: courseId, code: 'SCI-101', title: 'Assessment scope course', description: null, status: 'active', is_public: false, price_paise: 0, academic_year_id: null, academic_year: null, subject_id: null, subject: null, instructors: [], lessons_count: 0, enrollments_count: 0 }]);
+    if (path.endsWith(`/courses/${courseId}/questions/import/preview`)) return send({ valid: true, row_count: 1, valid_count: 1, errors: [], rows: [{ row_number: 2, valid: true, question: { prompt: 'What is the basic unit of life?', topic: 'Biology', difficulty: 2, type: 'single_choice', options: [{ text: 'The cell', is_correct: true }, { text: 'The organ', is_correct: false }] }, errors: {} }] });
+    if (path.endsWith(`/courses/${courseId}/questions/import`) && route.request().method() === 'POST') {
+      importedQuestions = true;
+      return send({ imported_count: 1, questions: [{ id: 'imported-cell-question', prompt: 'What is the basic unit of life?', topic: 'Biology', difficulty: 2, type: 'single_choice', options: [{ id: 'cell-option', text: 'The cell', is_correct: true }, { id: 'organ-option', text: 'The organ', is_correct: false }] }] });
+    }
     if (path.endsWith(`/courses/${courseId}/lessons`) || path.endsWith(`/courses/${courseId}/assignments`) || path.endsWith(`/courses/${courseId}/questions`) || path.endsWith(`/courses/${courseId}/assessments`)) return send([]);
     return send([]);
   });
@@ -1320,6 +1326,15 @@ test('assessment-only teacher can author quizzes without course-edit controls', 
   await expect(page.getByText('समयबद्ध क्विज़ प्रकाशित करें', { exact: true })).toBeVisible();
   await expect(page.getByLabel('क्विज़ का शीर्षक')).toBeVisible();
   await expect(page.getByLabel('प्रश्न खोजें')).toBeVisible();
+  await page.getByText('CSV से प्रश्न आयात करें', { exact: true }).click();
+  await expect(page.getByText(/अधिकतम 100 एकल-विकल्प या बहु-चयन प्रश्न/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'CSV टेम्पलेट डाउनलोड करें' })).toBeVisible();
+  await page.getByLabel('CSV फ़ाइल').setInputFiles({ name: 'questions.csv', mimeType: 'text/csv', buffer: Buffer.from('prompt,type,difficulty,topic,option_1,option_1_correct,option_2,option_2_correct\nWhat is the basic unit of life?,single_choice,2,Biology,The cell,true,The organ,false') });
+  await expect(page.getByText('1 में से 1 पंक्तियाँ मान्य हैं')).toBeVisible();
+  await expect(page.getByText('पंक्ति 2', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '1 प्रश्न आयात करें' })).toBeEnabled();
+  await page.getByRole('button', { name: '1 प्रश्न आयात करें' }).click();
+  await expect.poll(() => importedQuestions).toBe(true);
   await expect(page.getByText('कोर्स बनाएँ', { exact: true })).toHaveCount(0);
   await expect(page.getByText('पाठ जोड़ें', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('navigation', { name: 'Tools' }).getByRole('button', { name: 'Reports' })).toHaveCount(0);

@@ -2315,7 +2315,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
             <small className="form-hint">{assessmentRandomizeQuestions ? t('assessment.stableRandomOrder') : t('assessment.shownOrder')}{' '}{t('assessment.answerKeyPrivate')}</small>
           </form>
         </div>}
-        {canManageAssessments && selectedCourseId && <Suspense fallback={<div className="task-message">Loading question import…</div>}><QuestionCsvImport token={token} organizationId={organization.id} courseId={selectedCourseId} onImported={(questions) => {
+        {canManageAssessments && selectedCourseId && <Suspense fallback={<div className="task-message">{t('assessment.import.loading')}</div>}><QuestionCsvImport token={token} organizationId={organization.id} courseId={selectedCourseId} onImported={(questions) => {
           setBankQuestions((current) => [...current, ...questions]);
           setAssessmentQuestionIds((current) => [...new Set([...current, ...questions.map((question) => question.id)])]);
           setAssessmentPoints((current) => ({ ...current, ...Object.fromEntries(questions.map((question) => [question.id, '1'])) }));

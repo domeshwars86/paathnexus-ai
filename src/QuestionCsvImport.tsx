@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent } from 'react';
 import { importQuestionCsv, previewQuestionCsv, type BankQuestion, type QuestionCsvPreview } from './lib/auth';
+import { useLocale } from './lib/locale';
 
 type Props = {
   token: string;
@@ -21,6 +22,7 @@ function downloadTemplate() {
 }
 
 export function QuestionCsvImport({ token, organizationId, courseId, onImported }: Props) {
+  const { t } = useLocale();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<QuestionCsvPreview | null>(null);
   const [error, setError] = useState('');
@@ -37,7 +39,7 @@ export function QuestionCsvImport({ token, organizationId, courseId, onImported 
     try {
       setPreview(await previewQuestionCsv(token, organizationId, courseId, selected));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not preview this CSV.');
+      setError(cause instanceof Error ? cause.message : t('assessment.import.previewError'));
     } finally {
       setBusy(false);
     }
@@ -54,7 +56,7 @@ export function QuestionCsvImport({ token, organizationId, courseId, onImported 
       setPreview(null);
       setInputKey((key) => key + 1);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not import these questions.');
+      setError(cause instanceof Error ? cause.message : t('assessment.import.importError'));
     } finally {
       setBusy(false);
     }
@@ -62,22 +64,22 @@ export function QuestionCsvImport({ token, organizationId, courseId, onImported 
 
   return (
     <details className="question-csv-import">
-      <summary>Import questions from CSV</summary>
-      <p>Upload up to 100 single-choice or multiple-select questions in a CSV file no larger than 1 MB. Nothing is saved until you review the preview and choose Import.</p>
-      <button type="button" className="button button-quiet question-csv-template" onClick={downloadTemplate}>Download CSV template</button>
-      <label className="question-csv-file">CSV file<input key={inputKey} type="file" accept=".csv,text/csv" onChange={(event) => void chooseFile(event)} disabled={busy} /></label>
-      {busy && <p className="question-csv-status" role="status">{preview ? 'Importing questions…' : 'Checking CSV rows…'}</p>}
+      <summary>{t('assessment.import.title')}</summary>
+      <p>{t('assessment.import.instructions')}</p>
+      <button type="button" className="button button-quiet question-csv-template" onClick={downloadTemplate}>{t('assessment.import.downloadTemplate')}</button>
+      <label className="question-csv-file">{t('assessment.import.fileLabel')}<input key={inputKey} type="file" accept=".csv,text/csv" onChange={(event) => void chooseFile(event)} disabled={busy} /></label>
+      {busy && <p className="question-csv-status" role="status">{preview ? t('assessment.import.importing') : t('assessment.import.checking')}</p>}
       {error && <p className="question-csv-error" role="alert">{error}</p>}
       {preview && <div className="question-csv-preview" aria-live="polite">
         {preview.errors.map((message) => <p className="question-csv-error" key={message}>{message}</p>)}
-        {preview.row_count > 0 && <div className="question-csv-summary"><strong>{preview.valid_count} of {preview.row_count} rows are valid</strong><span>{preview.valid ? 'Ready to import' : 'Fix the rows marked below, then select the file again.'}</span></div>}
+        {preview.row_count > 0 && <div className="question-csv-summary"><strong>{t('assessment.import.validRows').replace('{valid}', String(preview.valid_count)).replace('{total}', String(preview.row_count))}</strong><span>{preview.valid ? t('assessment.import.ready') : t('assessment.import.fixRows')}</span></div>}
         {preview.rows.map((row) => <article className={`question-csv-row${row.valid ? '' : ' has-errors'}`} key={row.row_number}>
-          <div><strong>Row {row.row_number}</strong><span>{row.valid ? 'Valid' : 'Needs changes'}</span></div>
-          <p>{row.question.prompt || 'Question text is missing'}</p>
-          <small>{row.question.type || 'Question type missing'} · Level {row.question.difficulty || '—'} · {row.question.options.length} complete options · {row.question.options.filter((option) => option.is_correct).length} correct</small>
+          <div><strong>{t('assessment.import.rowNumber').replace('{number}', String(row.row_number))}</strong><span>{row.valid ? t('assessment.import.valid') : t('assessment.import.needsChanges')}</span></div>
+          <p>{row.question.prompt || t('assessment.import.missingQuestion')}</p>
+          <small>{row.question.type ? t(row.question.type === 'single_choice' ? 'assessment.singleChoice' : row.question.type === 'multiple_select' ? 'assessment.multipleSelect' : 'assessment.shortAnswer') : t('assessment.import.missingQuestionType')} · {t('assessment.import.level')} {row.question.difficulty || '—'} · {t('assessment.import.completeOptions').replace('{count}', String(row.question.options.length))} · {t('assessment.import.correctOptions').replace('{count}', String(row.question.options.filter((option) => option.is_correct).length))}</small>
           {Object.entries(row.errors).map(([field, messages]) => messages.map((message) => <small className="question-csv-row-error" key={`${field}-${message}`}>{field}: {message}</small>))}
         </article>)}
-        <button type="button" className="task-submit" disabled={busy || !preview.valid || !file} onClick={() => void importFile()}>{busy ? 'Importing…' : `Import ${preview.valid_count} questions`}</button>
+        <button type="button" className="task-submit" disabled={busy || !preview.valid || !file} onClick={() => void importFile()}>{busy ? t('assessment.import.importing') : t('assessment.import.importCount').replace('{count}', String(preview.valid_count))}</button>
       </div>}
     </details>
   );

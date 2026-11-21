@@ -2,10 +2,17 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.280 — Localize question CSV import
+- **Finding:** Assessment authoring, quiz attempts, and review were localized, but the question CSV import panel and its preview states remained English-only.
+- **Fix:** Added English/Hindi copy for CSV instructions, template download, file selection, loading and importing states, row summary/status labels, type names, option counts, fallbacks, and the import action. CSV headers, payloads, preview-before-save behavior, and the existing 100-question/1 MB limits are unchanged. Added a Hindi browser journey covering preview and import.
+- **Verification:** Full Chromium suite passed (57 tests), including assessment accessibility checks and local sign-in without email verification. Vitest passed (12 tests); TypeScript and production build passed.
+- **Limitations:** Dynamic API-provided row validation messages remain in their original language. Other workspace text, most API validation messages, authored names, and provider/generated content are not fully localized.
+- **Next:** Continue localization across remaining high-use workspace workflows while prioritizing ERP/LMS completion and release-readiness work.
+
 ## Milestone 0.279 — Localize learner quiz-taking and assessment status
 - **Finding:** Learners could see translated quiz results, but active quiz instructions, actions, time limits, scheduling labels, and attempt statuses switched back to English.
 - **Fix:** Added English/Hindi translations for quiz-taking prompts and actions, autosave guidance, time-limit/date formatting, assessment scheduling and availability, draft/published labels, and learner/educator attempt statuses. The learner quiz journey now switches to Hindi before starting the quiz and verifies the translated lifecycle and result status. Existing assessment permissions and API values are unchanged.
-- **Verification:** TypeScript and production build passed; Vitest passed (12 tests); the focused learner lesson/quiz browser journey passed. The attempted full Chromium run could not complete: its process stopped producing output and no Node/browser process remained. The preceding milestone's full 57-test Chromium suite passed.
+- **Verification:** Full Chromium suite passed (57 tests), including the learner lesson/quiz journey; Vitest passed (12 tests); TypeScript and production build passed.
 - **Limitations:** Question import and most other workspace content, API validation messages, authored names, and provider/generated content remain untranslated.
 - **Next:** Localize question import and remaining high-use workspace interactions, then continue ERP/LMS and release-readiness work.
 
