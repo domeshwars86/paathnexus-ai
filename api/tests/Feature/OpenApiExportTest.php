@@ -232,6 +232,10 @@ class OpenApiExportTest extends TestCase
             '#/components/schemas/PublicEducatorCatalogResponse',
             $educators['responses']['200']['content']['application/json']['schema']['$ref'],
         );
+        $this->assertSame(
+            '#/components/schemas/PublicEducatorResponse',
+            $document['paths']['/catalog/educators/{educatorId}']['get']['responses']['200']['content']['application/json']['schema']['$ref'],
+        );
         $this->assertSame(['type' => 'string', 'maxLength' => 100], array_column($educators['parameters'], null, 'name')['q']['schema']);
         $this->assertContains('organization_type', array_keys($document['components']['schemas']['PublicEducator']['properties']));
         $this->assertSame(200, array_key_first($document['paths']['/health/ready']['get']['responses']));

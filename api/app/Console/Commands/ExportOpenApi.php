@@ -599,6 +599,10 @@ class ExportOpenApi extends Command
                             ]],
                         ],
                     ],
+                    'PublicEducatorResponse' => [
+                        'type' => 'object', 'required' => ['data'],
+                        'properties' => ['data' => ['$ref' => '#/components/schemas/PublicEducator']],
+                    ],
                     'SubscriptionPlan' => [
                         'type' => 'object', 'required' => ['id', 'code', 'name', 'audience', 'description', 'amount_paise', 'billing_interval', 'entitlements'],
                         'properties' => [
@@ -2383,6 +2387,7 @@ class ExportOpenApi extends Command
             'api/v1/organizations/{organizationId}/fee-invoices/{invoiceId}/payments' => 'FeePaymentResponse',
             'api/v1/catalog/courses' => 'PublicCourseCatalogResponse',
             'api/v1/catalog/educators' => 'PublicEducatorCatalogResponse',
+            'api/v1/catalog/educators/{educatorId}' => 'PublicEducatorResponse',
             'api/v1/catalog/plans' => 'PublicPlanCatalogResponse',
             'api/v1/catalog/course-orders/{orderId}' => 'CourseOrderResponse',
             'api/v1/catalog/courses/{courseId}/enroll' => 'PublicCourseEnrollmentResponse',

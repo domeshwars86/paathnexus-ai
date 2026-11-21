@@ -817,6 +817,48 @@
                 }
             }
         },
+        "/catalog/educators/{educatorId}": {
+            "get": {
+                "operationId": "getPublicCatalogEducatorCatalogEducatorsEducatorId",
+                "summary": "Get Educator",
+                "description": "Request validation, response fields, capabilities, and tenant scope are documented in [API_SPECIFICATION.md](API_SPECIFICATION.md).",
+                "tags": [
+                    "Public Catalog"
+                ],
+                "parameters": [
+                    {
+                        "name": "educatorId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicEducatorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Error response. Status and field errors depend on the operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/catalog/plans": {
             "get": {
                 "operationId": "getPublicCatalogPlansCatalogPlans",
@@ -11829,6 +11871,17 @@
                                 "type": "integer"
                             }
                         }
+                    }
+                }
+            },
+            "PublicEducatorResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/PublicEducator"
                     }
                 }
             },

@@ -76,6 +76,27 @@ test('public feature, educator, course, and pricing pages support direct routes 
   }
 });
 
+test('public educator profiles are directly shareable and keep contact and account details private', async ({ page }) => {
+  const educatorId = '45a7e78a-86eb-49d8-9624-68f1289a11d9';
+  await page.route(`**/api/v1/catalog/educators/${educatorId}`, (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ data: { id: educatorId, name: 'Asha Rao', title: 'Biology educator', bio: 'Makes biology approachable.\nSupports first-generation learners.', organization_name: 'Learning Academy', organization_slug: 'learning-academy', organization_type: 'academy' } }),
+  }));
+  await page.goto(`/educators/${educatorId}`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Asha Rao' })).toBeVisible();
+  await expect(page).toHaveTitle('Asha Rao | PaathNexus AI');
+  await expect(page.getByText('Makes biology approachable.', { exact: false })).toBeVisible();
+  await expect(page.getByText(/contact details and account information are kept private/i)).toBeVisible();
+  await page.getByRole('link', { name: /back to educators/i }).click();
+  await expect(page).toHaveURL('/educators');
+  await expect(page.getByRole('heading', { name: 'Meet our educators' })).toBeVisible();
+  for (const width of responsiveWidths) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), `educator profile should not overflow at ${width}px`).toBeLessThanOrEqual(width + 1);
+  }
+});
+
 test('public site and sign-in support Hindi and remember the language choice', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.route('**/api/v1/catalog/courses**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [], meta: { total: 0, current_page: 1, last_page: 1 } }) }));

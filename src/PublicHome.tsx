@@ -2,19 +2,21 @@ import { useEffect, useRef, useState, type FormEvent, type MouseEvent as ReactMo
 import {
   ArrowRight, BookOpen, CalendarDays, Check, GraduationCap, Menu, Search, ShieldCheck, Sparkles, Users, X,
 } from 'lucide-react';
-import { listPublicCourses, listPublicEducators, listPublicPlans, type PublicCourse, type PublicEducator, type PublicPlan } from './lib/auth';
+import { getPublicEducator, listPublicCourses, listPublicEducators, listPublicPlans, type PublicCourse, type PublicEducator, type PublicPlan } from './lib/auth';
 import { LanguageSwitcher, useLocale } from './lib/locale';
 
 type Props = { onSignIn: () => void; onRegister: () => void };
-type PublicPage = 'home' | 'features' | 'educators' | 'courses' | 'pricing';
+type PublicPage = 'home' | 'features' | 'educators' | 'educator-profile' | 'courses' | 'pricing';
 
-const publicRoutes: Record<PublicPage, string> = {
+const publicRoutes: Record<Exclude<PublicPage, 'educator-profile'>, string> = {
   home: '/', features: '/features', educators: '/educators', courses: '/courses', pricing: '/pricing',
 };
 
-function pageFromPath(pathname: string): PublicPage {
+function pageFromPath(pathname: string): { page: PublicPage; educatorId: string | null } {
+  const educator = pathname.match(/^\/educators\/([0-9a-f-]{36})\/?$/i);
+  if (educator) return { page: 'educator-profile', educatorId: educator[1] ?? null };
   const route = Object.entries(publicRoutes).find(([, path]) => path === pathname.replace(/\/$/, '') || (path === '/' && pathname === '/'));
-  return (route?.[0] as PublicPage | undefined) ?? 'home';
+  return { page: (route?.[0] as PublicPage | undefined) ?? 'home', educatorId: null };
 }
 
 function price(plan: PublicPlan, locale: 'en' | 'hi', translate: (key: 'home.free' | 'home.contactPricing') => string): string {
@@ -30,7 +32,11 @@ function coursePrice(amountPaise: number, locale: 'en' | 'hi', freeLabel: string
 
 export default function PublicHome({ onSignIn, onRegister }: Props) {
   const { locale, t } = useLocale();
-  const [publicPage, setPublicPage] = useState<PublicPage>(() => pageFromPath(window.location.pathname));
+  const [publicPage, setPublicPage] = useState<PublicPage>(() => pageFromPath(window.location.pathname).page);
+  const [educatorProfileId, setEducatorProfileId] = useState<string | null>(() => pageFromPath(window.location.pathname).educatorId);
+  const [educatorProfile, setEducatorProfile] = useState<PublicEducator | null>(null);
+  const [loadingEducatorProfile, setLoadingEducatorProfile] = useState(false);
+  const [educatorProfileError, setEducatorProfileError] = useState(false);
   const [courses, setCourses] = useState<PublicCourse[]>([]);
   const [educators, setEducators] = useState<PublicEducator[]>([]);
   const [plans, setPlans] = useState<PublicPlan[]>([]);
@@ -109,13 +115,17 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
   useEffect(() => {
     const labels: Record<PublicPage, string> = {
       home: 'One Platform. Infinite Possibilities for Learning.',
-      features: t('nav.platform'), educators: t('nav.educators'), courses: t('nav.courses'), pricing: t('nav.pricing'),
+      features: t('nav.platform'), educators: t('nav.educators'), 'educator-profile': educatorProfile?.name ?? t('nav.educators'), courses: t('nav.courses'), pricing: t('nav.pricing'),
     };
     document.title = `${labels[publicPage]} | PaathNexus AI`;
-  }, [publicPage, t]);
+  }, [educatorProfile?.name, publicPage, t]);
 
   useEffect(() => {
-    const onPopState = () => setPublicPage(pageFromPath(window.location.pathname));
+    const onPopState = () => {
+      const route = pageFromPath(window.location.pathname);
+      setPublicPage(route.page);
+      setEducatorProfileId(route.educatorId);
+    };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
@@ -125,6 +135,19 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
     if (publicPage === 'home' || publicPage === 'pricing') void loadPlans();
     if (publicPage === 'home' || publicPage === 'educators') void loadEducators();
   }, [publicPage]);
+
+  useEffect(() => {
+    if (!educatorProfileId) { setEducatorProfile(null); setEducatorProfileError(false); return; }
+    let active = true;
+    setLoadingEducatorProfile(true);
+    setEducatorProfileError(false);
+    void getPublicEducator(educatorProfileId).then((profile) => {
+      if (active) setEducatorProfile(profile);
+    }).catch(() => {
+      if (active) { setEducatorProfile(null); setEducatorProfileError(true); }
+    }).finally(() => { if (active) setLoadingEducatorProfile(false); });
+    return () => { active = false; };
+  }, [educatorProfileId]);
 
   useEffect(() => {
     if (!selectedCourse) return;
@@ -198,10 +221,23 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
 
   function navigateTo(event: ReactMouseEvent<HTMLAnchorElement>, nextPage: PublicPage) {
     event.preventDefault();
-    if (publicPage !== nextPage) {
-      window.history.pushState({}, '', publicRoutes[nextPage]);
+    if (nextPage === 'educator-profile') return;
+    if (publicPage !== nextPage || educatorProfileId) {
+      if (publicPage === 'educator-profile' && nextPage === 'educators') window.history.replaceState({}, '', publicRoutes[nextPage]);
+      else window.history.pushState({}, '', publicRoutes[nextPage]);
       setPublicPage(nextPage);
+      setEducatorProfileId(null);
     }
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    closeMobileNav(true);
+  }
+
+  function openEducator(event: ReactMouseEvent<HTMLAnchorElement>, educator: PublicEducator) {
+    event.preventDefault();
+    const path = `/educators/${encodeURIComponent(educator.id)}`;
+    window.history.pushState({}, '', path);
+    setPublicPage('educator-profile');
+    setEducatorProfileId(educator.id);
     window.scrollTo({ top: 0, behavior: 'auto' });
     closeMobileNav(true);
   }
@@ -215,7 +251,7 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
       </a>
       <nav id="public-navigation" className={`public-nav-links ${mobileNavOpen ? 'is-open' : ''}`} aria-label={t('nav.public')}>
         <a href="/features" aria-current={publicPage === 'features' ? 'page' : undefined} onClick={(event) => navigateTo(event, 'features')}>{t('nav.platform')}</a>
-        <a href="/educators" aria-current={publicPage === 'educators' ? 'page' : undefined} onClick={(event) => navigateTo(event, 'educators')}>{t('nav.educators')}</a>
+        <a href="/educators" aria-current={publicPage === 'educators' || publicPage === 'educator-profile' ? 'page' : undefined} onClick={(event) => navigateTo(event, 'educators')}>{t('nav.educators')}</a>
         <a href="/courses" aria-current={publicPage === 'courses' ? 'page' : undefined} onClick={(event) => navigateTo(event, 'courses')}>{t('nav.courses')}</a>
         <a href="/pricing" aria-current={publicPage === 'pricing' ? 'page' : undefined} onClick={(event) => navigateTo(event, 'pricing')}>{t('nav.pricing')}</a>
         <a className="public-mobile-signin" href="#signin" onClick={(event) => { event.preventDefault(); closeMobileNav(); onSignIn(); }}>{t('nav.signIn')}</a>
@@ -231,6 +267,7 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
     </header>
 
     <main id="main-content" tabIndex={-1}>
+    <div className="public-standard-pages">
     <section className="public-hero" id="home">
       <div className="public-hero-copy">
         <span className="public-kicker"><Sparkles size={14} /> {t('common.learningConnected')}</span>
@@ -302,7 +339,7 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
       {educatorError ? <div className="public-empty" role="alert">{educatorError}<button className="public-retry" onClick={() => void loadEducators(educatorSearch)}>{t('common.tryAgain')}</button></div>
         : loadingEducators && educatorPage === 1 ? <div className="public-empty" role="status">{t('home.loadingEducators')}</div>
           : educators.length ? <div className="public-educator-grid">{educators.map((educator) => <article className="public-educator-card" key={educator.id}>
-            <span className="public-educator-avatar" aria-hidden="true">{educator.name.slice(0, 1).toUpperCase()}</span><div className="public-educator-card-copy"><h3>{educator.name}</h3><strong>{educator.title || t('home.educator')}</strong><small>{t('home.educatorAt').replace('{organization}', educator.organization_name || 'PaathNexus')}</small>{educator.bio && <p>{educator.bio}</p>}</div>
+            <span className="public-educator-avatar" aria-hidden="true">{educator.name.slice(0, 1).toUpperCase()}</span><div className="public-educator-card-copy"><h3>{educator.name}</h3><strong>{educator.title || t('home.educator')}</strong><small>{t('home.educatorAt').replace('{organization}', educator.organization_name || 'PaathNexus')}</small>{educator.bio && <p>{educator.bio}</p>}<a className="public-educator-profile-link" href={`/educators/${encodeURIComponent(educator.id)}`} onClick={(event) => openEducator(event, educator)}>{t('home.viewEducatorProfile')} <ArrowRight size={13} /></a></div>
           </article>)}</div>
             : <div className="public-empty">{educatorSearch ? t('home.noEducators') : t('home.noPublicEducators')}</div>}
       {educatorPage < educatorLastPage && !educatorError && <button className="public-load-more" disabled={loadingEducators} onClick={() => void loadEducators(educatorSearch, educatorPage + 1, true)}>{loadingEducators ? t('home.loadingEducators') : t('home.loadMoreEducators')}</button>}
@@ -339,6 +376,21 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
     </section>
 
     <section className="public-final-cta"><div><span className="public-kicker">PAATHNEXUS AI</span><h2>{t('home.finalTitle')}</h2><p>{t('home.finalDescription')}</p></div><button className="public-primary" onClick={onRegister}>{t('home.createWorkspace')} <ArrowRight size={16} /></button></section>
+    </div>
+    {publicPage === 'educator-profile' && <section className="public-educator-profile" aria-labelledby="educator-profile-title">
+      <a className="public-educator-back" href="/educators" onClick={(event) => navigateTo(event, 'educators')}>← {t('home.backToEducators')}</a>
+      {loadingEducatorProfile ? <div className="public-empty" role="status">{t('home.loadingEducatorProfile')}</div>
+        : educatorProfileError || !educatorProfile ? <div className="public-empty" role="alert">{t('home.educatorProfileUnavailable')}</div>
+          : <article className="public-educator-profile-card">
+            <span className="public-educator-profile-avatar" aria-hidden="true">{educatorProfile.name.slice(0, 1).toUpperCase()}</span>
+            <span className="public-kicker">{t('home.educatorProfileKicker')}</span>
+            <h1 id="educator-profile-title">{educatorProfile.name}</h1>
+            {educatorProfile.title && <h2>{educatorProfile.title}</h2>}
+            {educatorProfile.organization_name && <p className="public-educator-profile-organization">{t('home.educatorAt').replace('{organization}', educatorProfile.organization_name)}</p>}
+            {educatorProfile.bio && <p className="public-educator-profile-bio">{educatorProfile.bio}</p>}
+            <p className="public-educator-profile-privacy">{t('home.educatorProfilePrivacy')}</p>
+          </article>}
+    </section>}
     </main>
     <footer className="public-footer"><a className="public-brand" href="/" onClick={(event) => navigateTo(event, 'home')}><span className="public-brand-mark"><GraduationCap size={19} /></span><strong>paath<span>nexus</span><small>AI</small></strong></a><span>{t('home.tagline')}</span><a href="mailto:support@paathnexus.com">{t('home.contact')}</a><small>© 2026 PaathNexus AI</small></footer>
 

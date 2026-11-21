@@ -78,6 +78,26 @@ class PublicCatalogTest extends TestCase
         $this->getJson('/api/v1/catalog/educators?q=closed')->assertOk()->assertJsonPath('meta.total', 0);
     }
 
+    public function test_public_educator_detail_uses_the_same_opt_in_and_privacy_scope_as_the_directory(): void
+    {
+        $organization = Organization::create(['name' => 'Profile Details Academy', 'slug' => 'profile-details-academy', 'type' => 'academy', 'status' => 'active']);
+        $teacherUser = User::factory()->create(['name' => 'Asha Rao']);
+        $organization->users()->attach($teacherUser, ['role' => 'teacher', 'status' => 'active', 'joined_at' => now()]);
+        $teacher = TeacherProfile::create([
+            'organization_id' => $organization->id, 'employee_code' => 'PRIVATE-EMP-9', 'name' => 'Asha Rao',
+            'user_id' => $teacherUser->id, 'public_title' => 'Biology educator', 'public_bio' => 'Teaches biology.', 'is_public' => true,
+        ]);
+
+        $this->getJson('/api/v1/catalog/educators/'.$teacher->id)->assertOk()
+            ->assertJsonPath('data.id', $teacher->id)->assertJsonPath('data.name', 'Asha Rao')
+            ->assertJsonPath('data.bio', 'Teaches biology.')
+            ->assertJsonMissing(['employee_code' => 'PRIVATE-EMP-9'])
+            ->assertJsonMissing(['email' => $teacherUser->email, 'user_id' => $teacherUser->id]);
+
+        $teacher->forceFill(['is_public' => false])->save();
+        $this->getJson('/api/v1/catalog/educators/'.$teacher->id)->assertNotFound();
+    }
+
     public function test_course_manager_can_toggle_discovery_without_making_drafts_publicly_visible(): void
     {
         $organization = Organization::create(['name' => 'Catalog Workspace', 'slug' => 'catalog-workspace', 'type' => 'school', 'status' => 'active']);

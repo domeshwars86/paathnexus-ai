@@ -100,6 +100,28 @@ class PublicCatalogController extends Controller
         ])->values(), 'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()]]);
     }
 
+    public function educator(string $educatorId): JsonResponse
+    {
+        $teacher = TeacherProfile::query()->whereKey($educatorId)->where('status', 'active')->where('is_public', true)
+            ->whereNotNull('user_id')
+            ->whereNotExists(fn ($moderations) => $moderations->selectRaw('1')->from('platform_content_moderations')
+                ->whereColumn('platform_content_moderations.content_id', 'teacher_profiles.id')
+                ->where('platform_content_moderations.content_type', 'educator')->where('platform_content_moderations.status', 'hidden'))
+            ->whereHas('organization', fn ($organizations) => $organizations->where('status', 'active'))
+            ->whereHas('user', fn ($users) => $users->where('account_status', 'active'))
+            ->whereExists(fn ($members) => $members->selectRaw('1')->from('organization_user as educator_memberships')
+                ->whereColumn('educator_memberships.organization_id', 'teacher_profiles.organization_id')
+                ->whereColumn('educator_memberships.user_id', 'teacher_profiles.user_id')
+                ->where('educator_memberships.status', 'active')->where('educator_memberships.role', 'teacher'))
+            ->with('organization:id,name,slug,type')->firstOrFail();
+
+        return response()->json(['data' => [
+            'id' => $teacher->id, 'name' => $teacher->name, 'title' => $teacher->public_title,
+            'bio' => $teacher->public_bio, 'organization_name' => $teacher->organization?->name,
+            'organization_slug' => $teacher->organization?->slug, 'organization_type' => $teacher->organization?->type,
+        ]]);
+    }
+
     public function enroll(Request $request, string $courseId): JsonResponse
     {
         $course = Course::query()->whereKey($courseId)->where('status', 'active')->where('is_public', true)

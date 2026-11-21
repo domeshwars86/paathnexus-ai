@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.269 — Add shareable public educator profiles
+- **Finding:** The public educator directory showed published profiles but offered no direct page that educators could share.
+- **Fix:** Added an ID-addressable public educator endpoint and responsive `/educators/{id}` pages linked from directory cards. Detail responses reapply the active account, membership, workspace, opt-in, and moderation filters; they return only published profile and workspace fields, never contact details, employee codes, or account identifiers. Added English/Hindi copy and OpenAPI coverage.
+- **Verification:** Full Laravel suite passed (130 tests, 2,773 assertions); full Chromium suite passed (54 tests); Vitest passed (12 tests); TypeScript and production build passed. Focused educator/OpenAPI tests passed (6 tests, 888 assertions), and the browser journey verified direct loading, return navigation, privacy copy, and responsive overflow across 320–1440px.
+- **Limitations:** Profiles provide no contact channel or course list. Profile visibility follows the educator's current public opt-in and platform moderation state; otherwise the detail route returns 404.
+- **Next:** Add shareable public course detail pages with the existing opt-in, moderation, pricing, and enrollment rules; then continue release-readiness and remaining ERP/LMS backlog.
+
 ## Milestone 0.268 — Platform-assisted account recovery
 - **Finding:** Platform support could inspect account/workspace status but could not help an active user who had lost access.
 - **Fix:** Added a rate-limited, allowlist-only action on an exact-looked-up active account that requests a password-reset email through Laravel's existing broker. The link goes only to the account's registered email; the admin UI never receives the password or reset token. A metadata-only platform audit event records the request. Added English/Hindi UI copy and OpenAPI documentation.

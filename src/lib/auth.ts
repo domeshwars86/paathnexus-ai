@@ -477,6 +477,11 @@ export async function listPublicEducators(query = '', page = 1): Promise<{ items
   return { items: response.data, total: response.meta.total, page: response.meta.current_page, lastPage: response.meta.last_page };
 }
 
+export async function getPublicEducator(educatorId: string): Promise<PublicEducator> {
+  const response = await request<{ data: PublicEducator }>(`/catalog/educators/${encodeURIComponent(educatorId)}`);
+  return response.data;
+}
+
 export async function enrollPublicCourse(token: string, courseId: string): Promise<{ id: string; course_id: string; course_title: string; organization_id: string; organization_name: string; status: 'active'; enrolled_at: string | null }> {
   const response = await request<{ data: { id: string; course_id: string; course_title: string; organization_id: string; organization_name: string; status: 'active'; enrolled_at: string | null } }>(`/catalog/courses/${encodeURIComponent(courseId)}/enroll`, { method: 'POST' }, token);
   return response.data;
