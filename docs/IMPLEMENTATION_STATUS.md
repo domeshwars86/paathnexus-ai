@@ -2,6 +2,12 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.250 — Align invitation registration lock order
+- **Finding:** Invitation acceptance and creation lock the workspace before invitation state, but registering a new account from an invitation locked only the invitation before querying its workspace.
+- **Fix:** New-account invitation registration now locks the active workspace first, then the invitation, and rechecks whether the email already has an account inside the transaction. All three invite lifecycle paths now use workspace-first locking.
+- **Verification:** Focused `OrganizationInvitationTest` passed (2 tests, 25 assertions); full Laravel suite passed (121 tests, 2,639 assertions). PostgreSQL row-lock concurrency still requires CI verification.
+- **Next:** Continue remaining API-scope and release-readiness audits.
+
 ## Milestone 0.249 — Serialize workspace invitations and protect active member roles
 - **Finding:** Concurrent invitation requests could create multiple active tokens for one email in a workspace. Accepting a later outstanding token could overwrite the role of a person who had already become an active member.
 - **Fix:** Invitation creation and acceptance now lock the active organization first, then recheck invitation and membership state inside transactions. Acceptance rejects a token when the target is already an active member. Added regressions for duplicate pending creation and stale-token role changes.

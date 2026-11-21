@@ -124,13 +124,15 @@ class AuthController extends Controller
         ]);
         $invite = OrganizationInvitation::query()->where('token_hash', hash('sha256', $validated['token']))->firstOrFail();
         abort_if($invite->accepted_at || $invite->revoked_at || $invite->expires_at->isPast(), 410, 'This invitation is no longer valid.');
-        abort_if(User::query()->where('email', $invite->email)->exists(), 409, 'An account already uses this email. Sign in and accept the invitation instead.');
 
         $created = DB::transaction(function () use ($invite, $validated): User {
+            // Use the same workspace -> invitation lock order as invite acceptance and management.
+            $organization = Organization::query()->whereKey($invite->organization_id)
+                ->where('status', 'active')->lockForUpdate()->firstOrFail();
             $locked = OrganizationInvitation::query()->whereKey($invite->id)->lockForUpdate()->firstOrFail();
             abort_if($locked->accepted_at || $locked->revoked_at || $locked->expires_at->isPast(), 410, 'This invitation is no longer valid.');
+            abort_if(User::query()->where('email', $locked->email)->exists(), 409, 'An account already uses this email. Sign in and accept the invitation instead.');
             $user = User::create(['name' => $validated['name'], 'email' => $locked->email, 'password' => $validated['password'], 'account_status' => 'active']);
-            $organization = $locked->organization()->where('status', 'active')->firstOrFail();
             $organization->users()->attach($user->id, ['role' => $locked->role, 'status' => 'active', 'joined_at' => now()]);
             $locked->forceFill(['accepted_at' => now()])->save();
             return $user;
