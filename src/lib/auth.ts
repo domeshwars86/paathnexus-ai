@@ -470,6 +470,11 @@ export async function listPublicCourses(query = '', page = 1): Promise<{ items: 
   return { items: response.data, total: response.meta.total, page: response.meta.current_page, lastPage: response.meta.last_page };
 }
 
+export async function getPublicCourse(courseId: string): Promise<PublicCourse> {
+  const response = await request<{ data: PublicCourse }>(`/catalog/courses/${encodeURIComponent(courseId)}`);
+  return response.data;
+}
+
 export async function listPublicEducators(query = '', page = 1): Promise<{ items: PublicEducator[]; total: number; page: number; lastPage: number }> {
   const search = new URLSearchParams(); if (query.trim()) search.set('q', query.trim());
   search.set('page', String(page));

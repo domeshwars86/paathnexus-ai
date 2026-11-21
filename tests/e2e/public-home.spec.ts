@@ -97,6 +97,28 @@ test('public educator profiles are directly shareable and keep contact and accou
   }
 });
 
+test('public courses have shareable detail pages that disclose checkout limits and protect lesson content', async ({ page }) => {
+  const courseId = 'ea89dfeb-96e6-4a99-bd70-b33878deed40';
+  const course = { id: courseId, code: 'BIO-101', title: 'Biology foundations', description: 'Build a strong foundation in life science.', amount_paise: 125000, organization_name: 'Learning Academy', organization_slug: 'learning-academy', organization_type: 'academy', subject: 'Biology', lesson_count: 6, instructors: [{ name: 'Asha Rao', title: 'Biology educator', bio: 'Makes biology approachable.' }] };
+  await page.route(`**/api/v1/catalog/courses/${courseId}`, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: course }) }));
+  await page.route('**/api/v1/catalog/courses?**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [course], meta: { total: 1, current_page: 1, last_page: 1 } }) }));
+  await page.goto('/courses');
+  await page.getByRole('link', { name: /Open shareable course page/ }).click();
+  await expect(page).toHaveURL(`/courses/${courseId}`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Biology foundations' })).toBeVisible();
+  await expect(page).toHaveTitle('Biology foundations | PaathNexus AI');
+  await expect(page.getByText('Biology educator')).toBeVisible();
+  await expect(page.getByText(/paid checkout is not available yet/i)).toBeVisible();
+  await expect(page.getByText(/learning materials remain private/i)).toBeVisible();
+  await page.getByRole('link', { name: /back to courses/i }).click();
+  await expect(page).toHaveURL('/courses');
+  await expect(page.getByRole('heading', { name: 'Explore public courses' })).toBeVisible();
+  for (const width of responsiveWidths) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), `course detail should not overflow at ${width}px`).toBeLessThanOrEqual(width + 1);
+  }
+});
+
 test('public site and sign-in support Hindi and remember the language choice', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.route('**/api/v1/catalog/courses**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [], meta: { total: 0, current_page: 1, last_page: 1 } }) }));

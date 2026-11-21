@@ -28,6 +28,7 @@ class PlatformContentModerationTest extends TestCase
         $this->putJson('/api/v1/platform/content-moderation/course/'.$course->id, ['status' => 'hidden', 'reason' => 'Review requested'])
             ->assertOk()->assertJsonPath('data.status', 'hidden')->assertJsonPath('data.reason', 'Review requested');
         $this->getJson('/api/v1/catalog/courses')->assertOk()->assertJsonPath('meta.total', 0);
+        $this->getJson('/api/v1/catalog/courses/'.$course->id)->assertNotFound();
         $this->actingAs($student, 'sanctum')->postJson('/api/v1/catalog/courses/'.$course->id.'/enroll')->assertNotFound();
         $this->actingAs($student, 'sanctum')->postJson('/api/v1/catalog/courses/'.$course->id.'/orders')->assertNotFound();
 
@@ -36,6 +37,7 @@ class PlatformContentModerationTest extends TestCase
         $this->actingAs($admin, 'sanctum')->putJson('/api/v1/platform/content-moderation/educator/'.$teacher->id, ['status' => 'hidden'])
             ->assertOk()->assertJsonPath('data.status', 'hidden');
         $this->getJson('/api/v1/catalog/educators')->assertOk()->assertJsonPath('meta.total', 0);
+        $this->getJson('/api/v1/catalog/educators/'.$teacher->id)->assertNotFound();
         $this->getJson('/api/v1/catalog/courses')->assertJsonPath('data.0.title', 'Public Biology')->assertJsonMissing(['name' => 'Asha Rao']);
 
         $this->getJson('/api/v1/catalog/courses')->assertJsonPath('meta.total', 1);

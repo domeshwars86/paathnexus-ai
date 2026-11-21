@@ -25,8 +25,8 @@ class PublicCatalogTest extends TestCase
         $public = Course::create(['organization_id' => $organization->id, 'code' => 'OPEN-1', 'title' => 'Public Biology', 'description' => 'A public overview', 'status' => 'active', 'is_public' => true, 'created_by' => $owner->id]);
         $public->instructors()->attach($teacherUser->id, ['organization_id' => $organization->id, 'assigned_by' => $owner->id]);
         $teacher = TeacherProfile::create(['organization_id' => $organization->id, 'employee_code' => 'T-1', 'name' => 'Asha Rao', 'user_id' => $teacherUser->id, 'public_title' => 'Biology educator', 'public_bio' => 'Teaches life science.', 'is_public' => true]);
-        Course::create(['organization_id' => $organization->id, 'code' => 'PRIVATE-1', 'title' => 'Private Chemistry', 'status' => 'active', 'created_by' => $owner->id]);
-        Course::create(['organization_id' => $organization->id, 'code' => 'DRAFT-1', 'title' => 'Draft Physics', 'status' => 'draft', 'is_public' => true, 'created_by' => $owner->id]);
+        $private = Course::create(['organization_id' => $organization->id, 'code' => 'PRIVATE-1', 'title' => 'Private Chemistry', 'status' => 'active', 'created_by' => $owner->id]);
+        $draft = Course::create(['organization_id' => $organization->id, 'code' => 'DRAFT-1', 'title' => 'Draft Physics', 'status' => 'draft', 'is_public' => true, 'created_by' => $owner->id]);
         CourseLesson::create(['organization_id' => $organization->id, 'course_id' => $public->id, 'title' => 'Secret lesson title', 'content' => 'Private lesson content', 'position' => 1, 'status' => 'active', 'created_by' => $owner->id]);
         $plan = SubscriptionPlan::where('code', 'free')->firstOrFail();
         $plan->forceFill(['description' => 'Published free plan'])->save();
@@ -37,6 +37,12 @@ class PublicCatalogTest extends TestCase
             ->assertJsonPath('data.0.instructors.0.title', 'Biology educator')
             ->assertJsonMissing(['title' => 'Private Chemistry'])->assertJsonMissing(['title' => 'Secret lesson title']);
         $this->getJson('/api/v1/catalog/courses?q=chemistry')->assertOk()->assertJsonPath('meta.total', 0);
+        $this->getJson('/api/v1/catalog/courses/'.$public->id)->assertOk()
+            ->assertJsonPath('data.id', $public->id)->assertJsonPath('data.instructors.0.name', $teacher->name)
+            ->assertJsonPath('data.lesson_count', 1)->assertJsonMissing(['content' => 'Private lesson content']);
+        $this->getJson('/api/v1/catalog/courses/'.$public->id)->assertJsonMissing(['email' => $teacherUser->email]);
+        $this->getJson('/api/v1/catalog/courses/'.$private->id)->assertNotFound();
+        $this->getJson('/api/v1/catalog/courses/'.$draft->id)->assertNotFound();
         $this->getJson('/api/v1/catalog/plans')->assertOk()->assertJsonPath('data.0.code', 'free')
             ->assertJsonMissing(['is_active' => true]);
     }

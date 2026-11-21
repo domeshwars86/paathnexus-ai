@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.270 — Add shareable public course pages
+- **Finding:** Course discovery exposed summaries and a quick-view dialog, but visitors could not share a direct course URL. Instructor summaries on course listings could also retain profiles after the account or teacher membership became inactive.
+- **Fix:** Added a public course detail endpoint and responsive `/courses/{id}` page linked from catalog cards. The endpoint rechecks active/public course and workspace state plus moderation; it returns price, active lesson count, and only public instructor fields, never lesson content or learner data. Catalog instructor summaries now require an active linked user and teacher membership. Detail pages disclose when paid checkout is unavailable and direct learners through the existing sign-in/registration path.
+- **Verification:** Full Laravel suite passed (130 tests, 2,786 assertions); full Chromium suite passed (55 tests); Vitest passed (12 tests); TypeScript and production build passed. Focused public catalog/OpenAPI tests passed (6 tests, 899 assertions); focused course/educator page browser journeys passed (2 tests), including responsive overflow at 320–1440px and hidden-content cases.
+- **Limitations:** Course pages do not expose lesson previews. Paid checkout UI/provider integration remains unavailable; enrollment and payment capture still use the existing authenticated and sandbox safeguards. Educator pages have no contact channel or course list.
+- **Next:** Extend English/Hindi localization across authenticated workspace modules, then continue the ERP/LMS backlog and release-readiness checks; production payment, mail, AI, and conferencing require external provider configuration.
+
 ## Milestone 0.269 — Add shareable public educator profiles
 - **Finding:** The public educator directory showed published profiles but offered no direct page that educators could share.
 - **Fix:** Added an ID-addressable public educator endpoint and responsive `/educators/{id}` pages linked from directory cards. Detail responses reapply the active account, membership, workspace, opt-in, and moderation filters; they return only published profile and workspace fields, never contact details, employee codes, or account identifiers. Added English/Hindi copy and OpenAPI coverage.

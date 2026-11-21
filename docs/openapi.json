@@ -659,6 +659,48 @@
                 }
             }
         },
+        "/catalog/courses/{courseId}": {
+            "get": {
+                "operationId": "getPublicCatalogCourseCatalogCoursesCourseId",
+                "summary": "Get Course",
+                "description": "Request validation, response fields, capabilities, and tenant scope are documented in [API_SPECIFICATION.md](API_SPECIFICATION.md).",
+                "tags": [
+                    "Public Catalog"
+                ],
+                "parameters": [
+                    {
+                        "name": "courseId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicCourseResponse"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Error response. Status and field errors depend on the operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/catalog/courses/{courseId}/enroll": {
             "post": {
                 "operationId": "postPublicCatalogEnrollCatalogCoursesCourseIdEnroll",
@@ -11778,6 +11820,17 @@
                                 "type": "integer"
                             }
                         }
+                    }
+                }
+            },
+            "PublicCourseResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/PublicCourse"
                     }
                 }
             },

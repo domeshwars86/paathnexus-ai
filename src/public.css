@@ -86,8 +86,8 @@
 .public-page-courses .public-hero,.public-page-courses .public-trust,.public-page-courses .public-features,.public-page-courses .public-educators,.public-page-courses .public-pricing,
 .public-page-pricing .public-hero,.public-page-pricing .public-trust,.public-page-pricing .public-features,.public-page-pricing .public-educators,.public-page-pricing .public-catalog{display:none}
 .public-page-features .public-educator-directory,.public-page-courses .public-educator-directory,.public-page-pricing .public-educator-directory{display:none}
-.public-page-educator-profile .public-standard-pages{display:none}
-.public-educator-profile{min-height:58vh;padding:54px clamp(20px,8vw,112px) 90px;background:linear-gradient(135deg,#f5f3ff,#f8fbff)}
+.public-page-educator-profile .public-standard-pages,.public-page-course-detail .public-standard-pages{display:none}
+.public-educator-profile,.public-course-detail-page{min-height:58vh;padding:54px clamp(20px,8vw,112px) 90px;background:linear-gradient(135deg,#f5f3ff,#f8fbff)}
 .public-educator-back{display:inline-flex;align-items:center;gap:8px;max-width:1160px;margin:0 auto 24px;color:#5548d8;font-size:13px;font-weight:700;text-decoration:none}
 .public-educator-profile-card{max-width:820px;margin:0 auto;padding:clamp(24px,6vw,54px);border:1px solid #e9e7f3;border-radius:22px;background:#fff;box-shadow:0 16px 48px #28254a0c}
 .public-educator-profile-avatar{display:grid;width:68px;height:68px;margin-bottom:24px;place-items:center;border-radius:50%;background:#efedff;color:#5c52ca;font:750 28px Manrope,sans-serif}
@@ -98,6 +98,23 @@
 .public-educator-profile-privacy{margin:28px 0 0;padding-top:18px;border-top:1px solid #eeeeF4;color:#77788d;font-size:12px;line-height:1.6}
 .public-educator-profile-link{display:inline-flex;align-items:center;gap:5px;margin-top:12px;color:#5548d8;font-size:11px;font-weight:750;text-decoration:none}
 .public-educator-profile-link:focus-visible,.public-educator-back:focus-visible{outline:3px solid #6a5af0;outline-offset:3px;border-radius:3px}
+.public-course-page-link{display:inline-flex;align-items:center;gap:5px;margin:2px 0 0;color:#5548d8;font-size:11px;font-weight:750;text-decoration:none}
+.public-course-page-link:focus-visible{outline:3px solid #6a5af0;outline-offset:3px;border-radius:3px}
+.public-course-detail-card{max-width:900px;margin:0 auto;padding:clamp(24px,6vw,54px);border:1px solid #e9e7f3;border-radius:22px;background:#fff;box-shadow:0 16px 48px #28254a0c}
+.public-course-detail-icon{display:grid;width:68px;height:68px;margin-bottom:24px;place-items:center;border-radius:18px;background:#efedff;color:#5c52ca;font:750 28px Manrope,sans-serif}
+.public-course-detail-card h1{margin:10px 0 5px;color:#25263a;font:750 clamp(30px,5vw,48px)/1.1 Manrope,sans-serif;letter-spacing:-1.3px}
+.public-course-detail-byline{margin:8px 0;color:#686a7d;font-size:14px}
+.public-course-detail-description{margin:25px 0;color:#414257;font-size:16px;line-height:1.8;white-space:pre-line;overflow-wrap:anywhere}
+.public-course-detail-facts{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;padding:18px 0;border-top:1px solid #eeeeF4;border-bottom:1px solid #eeeeF4;color:#55566b;font-size:13px}
+.public-course-detail-facts>span:first-child{display:flex;align-items:center;gap:8px}
+.public-course-detail-facts strong{color:#25263a;font-size:18px}
+.public-course-detail-instructors{margin-top:24px}
+.public-course-detail-instructors h2{font-size:17px}
+.public-course-detail-instructors article{margin-top:12px;padding:15px;border:1px solid #eeeeF4;border-radius:12px}
+.public-course-detail-instructors article strong,.public-course-detail-instructors article span{display:block;color:#34354b;font-size:13px}
+.public-course-detail-instructors article span{margin-top:3px;color:#686a7d;font-size:12px}
+.public-course-detail-instructors article p{margin:8px 0 0;color:#686a7d;font-size:12px;line-height:1.6}
+.public-course-detail-privacy{margin:24px 0 0;color:#77788d;font-size:12px;line-height:1.6}
 
 .public-educator-directory{padding:76px clamp(22px,8vw,116px);background:#fff}
 .public-educator-directory-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;max-width:1160px;margin:0 auto 28px}

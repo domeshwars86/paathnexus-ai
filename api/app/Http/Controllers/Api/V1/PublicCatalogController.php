@@ -38,10 +38,15 @@ class PublicCatalogController extends Controller
         $page = $query->paginate(12);
 
         return response()->json(['data' => $page->getCollection()->map(function (Course $course): array {
-            $instructors = $course->organization->teacherProfiles()->where('status', 'active')->where('is_public', true)
+            $instructors = $course->organization->teacherProfiles()->where('status', 'active')->where('is_public', true)->whereNotNull('user_id')
                 ->whereNotExists(fn ($moderations) => $moderations->selectRaw('1')->from('platform_content_moderations')
                     ->whereColumn('platform_content_moderations.content_id', 'teacher_profiles.id')
                     ->where('platform_content_moderations.content_type', 'educator')->where('platform_content_moderations.status', 'hidden'))
+                ->whereHas('user', fn ($users) => $users->where('account_status', 'active'))
+                ->whereExists(fn ($members) => $members->selectRaw('1')->from('organization_user as educator_memberships')
+                    ->whereColumn('educator_memberships.organization_id', 'teacher_profiles.organization_id')
+                    ->whereColumn('educator_memberships.user_id', 'teacher_profiles.user_id')
+                    ->where('educator_memberships.status', 'active')->where('educator_memberships.role', 'teacher'))
                 ->whereIn('user_id', $course->instructors->pluck('id'))->orderBy('name')->get(['name', 'public_title', 'public_bio'])
                 ->map(fn ($teacher): array => ['name' => $teacher->name, 'title' => $teacher->public_title, 'bio' => $teacher->public_bio])->values();
 
@@ -54,6 +59,36 @@ class PublicCatalogController extends Controller
                 'instructors' => $instructors,
             ];
         })->values(), 'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()]]);
+    }
+
+    public function course(string $courseId): JsonResponse
+    {
+        $course = Course::query()->whereKey($courseId)->where('status', 'active')->where('is_public', true)
+            ->whereNotExists(fn ($moderations) => $moderations->selectRaw('1')->from('platform_content_moderations')
+                ->whereColumn('platform_content_moderations.content_id', 'courses.id')
+                ->where('platform_content_moderations.content_type', 'course')->where('platform_content_moderations.status', 'hidden'))
+            ->whereHas('organization', fn ($organizations) => $organizations->where('status', 'active'))
+            ->with(['organization:id,name,slug,type', 'subject:id,name,code', 'instructors:id,name'])
+            ->withCount(['lessons' => fn ($lessons) => $lessons->where('status', 'active')])->firstOrFail();
+        $instructors = $course->organization->teacherProfiles()->where('status', 'active')->where('is_public', true)->whereNotNull('user_id')
+            ->whereNotExists(fn ($moderations) => $moderations->selectRaw('1')->from('platform_content_moderations')
+                ->whereColumn('platform_content_moderations.content_id', 'teacher_profiles.id')
+                ->where('platform_content_moderations.content_type', 'educator')->where('platform_content_moderations.status', 'hidden'))
+            ->whereHas('user', fn ($users) => $users->where('account_status', 'active'))
+            ->whereExists(fn ($members) => $members->selectRaw('1')->from('organization_user as educator_memberships')
+                ->whereColumn('educator_memberships.organization_id', 'teacher_profiles.organization_id')
+                ->whereColumn('educator_memberships.user_id', 'teacher_profiles.user_id')
+                ->where('educator_memberships.status', 'active')->where('educator_memberships.role', 'teacher'))
+            ->whereIn('user_id', $course->instructors->pluck('id'))->orderBy('name')->get(['name', 'public_title', 'public_bio'])
+            ->map(fn ($teacher): array => ['name' => $teacher->name, 'title' => $teacher->public_title, 'bio' => $teacher->public_bio])->values();
+
+        return response()->json(['data' => [
+            'id' => $course->id, 'code' => $course->code, 'title' => $course->title,
+            'description' => $course->description, 'organization_name' => $course->organization?->name,
+            'amount_paise' => (int) $course->price_paise, 'organization_slug' => $course->organization?->slug,
+            'organization_type' => $course->organization?->type, 'subject' => $course->subject?->name,
+            'lesson_count' => (int) $course->lessons_count, 'instructors' => $instructors,
+        ]]);
     }
 
     public function plans(): JsonResponse

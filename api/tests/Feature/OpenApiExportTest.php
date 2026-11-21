@@ -224,6 +224,10 @@ class OpenApiExportTest extends TestCase
         $this->assertContains('lesson_count', array_keys($document['components']['schemas']['PublicCourse']['properties']));
         $this->assertContains('instructors', array_keys($document['components']['schemas']['PublicCourse']['properties']));
         $this->assertSame(
+            '#/components/schemas/PublicCourseResponse',
+            $document['paths']['/catalog/courses/{courseId}']['get']['responses']['200']['content']['application/json']['schema']['$ref'],
+        );
+        $this->assertSame(
             '#/components/schemas/PublicPlanCatalogResponse',
             $document['paths']['/catalog/plans']['get']['responses']['200']['content']['application/json']['schema']['$ref'],
         );
