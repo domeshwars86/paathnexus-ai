@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.282 — Localize learner account linking
+- **Finding:** Workspace managers could link an existing student profile to an eligible learner account from the course workspace, but the linking form and its guidance were English-only.
+- **Fix:** Added English/Hindi copy for the profile and account selectors, unlinked state, save/loading action, guidance, and generic fallback error. The request still sends the same selected profile and nullable account ID through the existing organization-scoped API. Added a Hindi browser regression that verifies the submitted account ID.
+- **Verification:** Full Chromium suite passed (59 tests), including the learner account-linking and email-verification-hidden login journeys. Vitest passed (12 tests); TypeScript and production build passed.
+- **Limitations:** API-provided errors remain in their original language. Broader remaining academic/workspace forms and error states need localization; hosted PostgreSQL and production integrations also remain outstanding.
+- **Next:** Continue the shared locale through remaining high-use academic controls and common workspace error states, then proceed with ERP/LMS and release-readiness work.
+
 ## Milestone 0.281 — Localize the student roster
 - **Finding:** The student directory exposed workspace profiles and allowed authorized educators to add learners, but its search, status, empty states, and creation form remained English-only.
 - **Fix:** Added English/Hindi labels and states for the roster, active counts, search, student creation, and errors. Roster data remains scoped to the active organization, creation still requires `academic.manage`, and entered names/codes are preserved. Added a narrow-viewport Hindi browser journey covering search, creation, and read-only controls.

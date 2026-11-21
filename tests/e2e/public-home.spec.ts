@@ -1344,6 +1344,42 @@ test('student roster follows Hindi and keeps student creation permission-scoped'
   await expect(page.locator('.students-directory-panel').getByText('Ravi Student')).toBeVisible();
 });
 
+test('workspace manager can link a learner account from the Hindi course workspace', async ({ page }) => {
+  test.setTimeout(90_000);
+  const organizationId = 'student-account-link-locale-org';
+  let linkedUserId: number | null = null;
+  await page.addInitScript(() => {
+    localStorage.setItem('paathnexus.locale', 'hi');
+    sessionStorage.setItem('paathnexus.session-token', 'student-account-link-locale-token');
+    sessionStorage.setItem('paathnexus.active-organization', 'student-account-link-locale-org');
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const send = (data: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ data }) });
+    if (path.endsWith('/auth/me')) return send({ user: { name: 'Ari Educator', email: 'ari@example.test' }, organizations: [{ id: organizationId, name: 'Fixture Academy', slug: 'fixture-academy', type: 'school', role: 'educator', permissions: ['workspace.view', 'academic.view', 'academic.manage', 'courses.view', 'courses.manage'], locale: 'en', timezone: 'Asia/Kolkata' }] });
+    if (path.endsWith('/dashboard')) return send({ active_students_count: 1, active_classes_count: 0, active_enrollments_count: 0, unassigned_students_count: 0, pending_tasks_count: 0, latest_attendance_rate: null, latest_attendance_class: null, latest_attendance_date: null, attendance_series: [], classes: [], today_schedule: [], schedule_notice: null, schedule_weekday: 4, active_academic_year_id: null });
+    if (path.endsWith(`/organizations/${organizationId}/students/member-candidates`)) return send([{ id: 71, name: 'Asha Learner' }]);
+    if (path.endsWith(`/organizations/${organizationId}/students`) && route.request().method() === 'GET') return send([{ id: 'student-link-profile', name: 'Asha Learner', student_code: 'ST-071', section_id: null }]);
+    if (path.endsWith(`/organizations/${organizationId}/students/student-link-profile/member`) && route.request().method() === 'PUT') {
+      linkedUserId = (route.request().postDataJSON() as { user_id: number | null }).user_id;
+      return send({});
+    }
+    if (path.endsWith(`/organizations/${organizationId}/courses`) && route.request().method() === 'GET') return send([]);
+    return send([]);
+  });
+
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'मुख्य नेविगेशन' }).getByRole('button', { name: 'कोर्स', exact: true }).click();
+  const linkForm = page.locator('form.academic-form').filter({ hasText: 'विद्यार्थी खाता लिंक करें' });
+  await expect(linkForm.getByLabel('विद्यार्थी प्रोफ़ाइल')).toBeVisible();
+  await expect(linkForm.getByLabel('कार्यस्थान का विद्यार्थी खाता')).toBeVisible();
+  await expect(linkForm.getByText('लिंक करने पर विद्यार्थी नामांकित कोर्स देख सकता है और पाठ की अपनी प्रगति सहेज सकता है।')).toBeVisible();
+  await linkForm.getByLabel('विद्यार्थी प्रोफ़ाइल').selectOption('student-link-profile');
+  await linkForm.getByLabel('कार्यस्थान का विद्यार्थी खाता').selectOption('71');
+  await linkForm.getByRole('button', { name: 'खाता लिंक सहेजें' }).click();
+  await expect.poll(() => linkedUserId).toBe(71);
+});
+
 test('assessment-only teacher can author quizzes without course-edit controls', async ({ page }) => {
   const organizationId = 'assessment-teacher-org-fixture';
   const courseId = 'assessment-teacher-course-fixture';
