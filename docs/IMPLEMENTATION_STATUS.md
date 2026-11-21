@@ -2,6 +2,12 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.255 — Enforce student limits under a workspace lock
+- **Finding:** Student count and plan entitlement were checked before insert without serialization, so concurrent requests could both pass a `max_students` cap and exceed it.
+- **Fix:** Student creation now locks the active workspace, recounts active students, and checks the current plan limit inside the transaction before creating the profile.
+- **Verification:** Focused plan-entitlement test passed (1 test, 11 assertions); full Laravel suite passed (121 tests, 2,642 assertions); PHP lint and `git diff --check` passed. PostgreSQL concurrency is not exercised by SQLite and remains a CI verification item.
+- **Next:** Continue API-scope and release-readiness audits.
+
 ## Milestone 0.254 — Serialize active academic year and timetable writes
 - **Finding:** Concurrent active-year creation could leave multiple active years. Timetable overlap checks ran outside a transaction, allowing concurrent writes to reserve the same class or teacher time slot.
 - **Fix:** Active-year creation now locks the organization like year activation. Timetable create/update now locks the organization and re-runs all tenant, offering, section, and overlap checks inside the transaction.

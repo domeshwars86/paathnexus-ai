@@ -10,6 +10,7 @@ use App\Models\StudentProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use App\Services\PlanEntitlements;
 use App\Services\TeacherClassScope;
@@ -88,14 +89,22 @@ class AcademicController extends Controller
     {
         $organization = $this->memberOrganization($request, $organizationId);
         abort_unless($request->user()->can('manageAcademic', $organization), 403);
-        $entitlements->assertBelowLimit($organization, 'max_students', $organization->students()->where('status', 'active')->count());
-
         $validated = $request->validate([
             'student_code' => ['required', 'string', 'max:64', Rule::unique('student_profiles', 'student_code')->where('organization_id', $organization->id)],
             'name' => ['required', 'string', 'max:160'],
         ]);
 
-        $student = $organization->students()->create($validated);
+        $student = DB::transaction(function () use ($organization, $entitlements, $validated): StudentProfile {
+            $lockedOrganization = Organization::query()->whereKey($organization->id)
+                ->where('status', 'active')->lockForUpdate()->firstOrFail();
+            $entitlements->assertBelowLimit(
+                $lockedOrganization,
+                'max_students',
+                $lockedOrganization->students()->where('status', 'active')->count(),
+            );
+
+            return $lockedOrganization->students()->create($validated);
+        });
 
         return response()->json(['data' => [
             'id' => $student->id,
