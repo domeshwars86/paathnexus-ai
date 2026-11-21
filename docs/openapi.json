@@ -7168,6 +7168,72 @@
                 }
             }
         },
+        "/organizations/{organizationId}/schedule-exceptions/{exceptionId}": {
+            "put": {
+                "operationId": "putScheduleExceptionUpdateOrganizationsOrganizationIdScheduleExceptionsExceptionId",
+                "summary": "Update Schedule Exceptions",
+                "description": "Request validation, response fields, capabilities, and tenant scope are documented in [API_SPECIFICATION.md](API_SPECIFICATION.md).",
+                "tags": [
+                    "Schedule Exception"
+                ],
+                "parameters": [
+                    {
+                        "name": "organizationId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "exceptionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ScheduleExceptionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Error response. Status and field errors depend on the operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "The endpoint accepts JSON input. See API_SPECIFICATION.md for field-level validation.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateScheduleExceptionRequest"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/organizations/{organizationId}/schedule-exceptions/{exceptionId}/cancel": {
             "post": {
                 "operationId": "postScheduleExceptionCancelOrganizationsOrganizationIdScheduleExceptionsExceptionIdCancel",
@@ -19135,6 +19201,28 @@
                     }
                 },
                 "description": "Conditional fields depend on type: closure has no class/section/timetable/subject/teacher/timing/room; cancel requires class and may reference a timetable entry; extra requires class, subject, starts_at, and ends_at."
+            },
+            "UpdateScheduleExceptionRequest": {
+                "type": "object",
+                "required": [
+                    "title",
+                    "notes"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                    },
+                    "notes": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 2000
+                    }
+                },
+                "description": "Updates the display title and notes of an active dated schedule change. The date and schedule scope are immutable after creation."
             },
             "LiveSessionRecord": {
                 "type": "object",

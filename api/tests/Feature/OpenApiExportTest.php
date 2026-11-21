@@ -910,6 +910,16 @@ class OpenApiExportTest extends TestCase
             '#/components/schemas/StoreScheduleExceptionRequest',
             $document['paths'][$scheduleExceptionsPath]['post']['requestBody']['content']['application/json']['schema']['$ref'],
         );
+        $scheduleExceptionPath = $scheduleExceptionsPath.'/{exceptionId}';
+        $this->assertSame(
+            '#/components/schemas/ScheduleExceptionResponse',
+            $document['paths'][$scheduleExceptionPath]['put']['responses']['200']['content']['application/json']['schema']['$ref'],
+        );
+        $this->assertSame(
+            '#/components/schemas/UpdateScheduleExceptionRequest',
+            $document['paths'][$scheduleExceptionPath]['put']['requestBody']['content']['application/json']['schema']['$ref'],
+        );
+        $this->assertSame(['title', 'notes'], $document['components']['schemas']['UpdateScheduleExceptionRequest']['required']);
         $this->assertSame(
             '#/components/schemas/ScheduleExceptionResponse',
             $document['paths'][$scheduleExceptionsPath.'/{exceptionId}/cancel']['post']['responses']['200']['content']['application/json']['schema']['$ref'],

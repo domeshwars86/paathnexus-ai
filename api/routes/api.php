@@ -179,6 +179,8 @@ Route::prefix('v1')->group(function (): void {
             ->whereUuid('organizationId');
         Route::post('/organizations/{organizationId}/schedule-exceptions', [\App\Http\Controllers\Api\V1\ScheduleExceptionController::class, 'store'])
             ->whereUuid('organizationId');
+        Route::put('/organizations/{organizationId}/schedule-exceptions/{exceptionId}', [\App\Http\Controllers\Api\V1\ScheduleExceptionController::class, 'update'])
+            ->whereUuid('organizationId')->whereUuid('exceptionId');
         Route::post('/organizations/{organizationId}/schedule-exceptions/{exceptionId}/cancel', [\App\Http\Controllers\Api\V1\ScheduleExceptionController::class, 'cancel'])
             ->whereUuid('organizationId')->whereUuid('exceptionId');
         Route::get('/organizations/{organizationId}/live-sessions', [\App\Http\Controllers\Api\V1\LiveSessionController::class, 'index'])

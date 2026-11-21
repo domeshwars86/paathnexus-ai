@@ -2002,6 +2002,14 @@ class ExportOpenApi extends Command
                         ],
                         'description' => 'Conditional fields depend on type: closure has no class/section/timetable/subject/teacher/timing/room; cancel requires class and may reference a timetable entry; extra requires class, subject, starts_at, and ends_at.',
                     ],
+                    'UpdateScheduleExceptionRequest' => [
+                        'type' => 'object', 'required' => ['title', 'notes'],
+                        'properties' => [
+                            'title' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 120],
+                            'notes' => ['type' => ['string', 'null'], 'maxLength' => 2000],
+                        ],
+                        'description' => 'Updates the display title and notes of an active dated schedule change. The date and schedule scope are immutable after creation.',
+                    ],
                     'LiveSessionRecord' => [
                         'type' => 'object', 'required' => ['id', 'title', 'description', 'class_id', 'class_name', 'section_id', 'section_name', 'course_id', 'course_title', 'provider', 'starts_at', 'ends_at', 'status', 'join_available', 'recording_url'],
                         'properties' => [
@@ -2386,6 +2394,7 @@ class ExportOpenApi extends Command
             'api/v1/organizations/{organizationId}/teachers/{teacherId}/member' => 'TeacherProfileResponse',
             'api/v1/organizations/{organizationId}/teachers/{teacherId}/public-profile' => 'TeacherPublicProfileResponse',
             'api/v1/organizations/{organizationId}/schedule-exceptions' => $method === 'post' ? 'ScheduleExceptionResponse' : 'ScheduleExceptionsResponse',
+            'api/v1/organizations/{organizationId}/schedule-exceptions/{exceptionId}' => 'ScheduleExceptionResponse',
             'api/v1/organizations/{organizationId}/schedule-exceptions/{exceptionId}/cancel' => 'ScheduleExceptionResponse',
             'api/v1/organizations/{organizationId}/live-sessions' => $method === 'post' ? 'LiveSessionResponse' : 'LiveSessionsResponse',
             'api/v1/organizations/{organizationId}/live-sessions/{sessionId}' => 'LiveSessionResponse',
@@ -2614,6 +2623,7 @@ class ExportOpenApi extends Command
             'api/v1/organizations/{organizationId}/teachers/{teacherId}/member' => 'LinkTeacherMemberRequest',
             'api/v1/organizations/{organizationId}/teachers/{teacherId}/public-profile' => 'UpdateTeacherPublicProfileRequest',
             'api/v1/organizations/{organizationId}/schedule-exceptions' => 'StoreScheduleExceptionRequest',
+            'api/v1/organizations/{organizationId}/schedule-exceptions/{exceptionId}' => 'UpdateScheduleExceptionRequest',
             'api/v1/organizations/{organizationId}/live-sessions' => 'StoreLiveSessionRequest',
             'api/v1/organizations/{organizationId}/live-sessions/{sessionId}' => 'UpdateLiveSessionRequest',
             'api/v1/organizations/{organizationId}/live-sessions/{sessionId}/attendance' => 'RecordLiveSessionAttendanceRequest',
@@ -2712,6 +2722,7 @@ class ExportOpenApi extends Command
             'api/v1/organizations/{organizationId}/teachers/{teacherId}/member',
             'api/v1/organizations/{organizationId}/teachers/{teacherId}/public-profile',
             'api/v1/organizations/{organizationId}/schedule-exceptions',
+            'api/v1/organizations/{organizationId}/schedule-exceptions/{exceptionId}',
             'api/v1/organizations/{organizationId}/live-sessions',
             'api/v1/organizations/{organizationId}/live-sessions/{sessionId}',
             'api/v1/organizations/{organizationId}/live-sessions/{sessionId}/attendance',

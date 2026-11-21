@@ -59,6 +59,13 @@ class ScheduleExceptionTest extends TestCase
             ->assertNotFound();
         $this->actingAs($learner, 'sanctum')->getJson($base.'/student/dashboard')
             ->assertOk()->assertJsonCount(0, 'data.today_schedule')->assertJsonPath('data.schedule_notice', 'Schedule update: Section A field trip');
+        $this->actingAs($learner, 'sanctum')->putJson($base.'/schedule-exceptions/'.$cancellation['id'], ['title' => 'Updated field trip', 'notes' => null])->assertForbidden();
+        $this->actingAs($owner, 'sanctum')->putJson('/api/v1/organizations/'.$foreignOrganization->id.'/schedule-exceptions/'.$cancellation['id'], ['title' => 'Updated field trip', 'notes' => null])->assertNotFound();
+        $cancellation = $this->actingAs($owner, 'sanctum')->putJson($base.'/schedule-exceptions/'.$cancellation['id'], [
+            'title' => 'Updated field trip', 'notes' => 'Meet at the school gate.',
+        ])->assertOk()->assertJsonPath('data.title', 'Updated field trip')->assertJsonPath('data.notes', 'Meet at the school gate.')->json('data');
+        $this->actingAs($learner, 'sanctum')->getJson($base.'/student/dashboard')
+            ->assertOk()->assertJsonPath('data.schedule_notice', 'Schedule update: Updated field trip');
 
         $extra = $this->actingAs($owner, 'sanctum')->postJson($base.'/schedule-exceptions', [
             'academic_year_id' => $year->id, 'exception_date' => '2026-11-18', 'type' => 'extra',
@@ -93,6 +100,7 @@ class ScheduleExceptionTest extends TestCase
             ->assertOk()->assertJsonCount(1, 'data.today_schedule')->assertJsonPath('data.today_schedule.0.id', $extra['id']);
         $this->actingAs($owner, 'sanctum')->postJson($base.'/schedule-exceptions/'.$cancellation['id'].'/cancel')
             ->assertOk()->assertJsonPath('data.status', 'cancelled');
+        $this->actingAs($owner, 'sanctum')->putJson($base.'/schedule-exceptions/'.$cancellation['id'], ['title' => 'Too late', 'notes' => null])->assertStatus(409);
         $this->assertDatabaseHas('schedule_exceptions', ['id' => $cancellation['id'], 'status' => 'cancelled']);
 
         $outsideYear = $this->actingAs($owner, 'sanctum')->postJson($base.'/schedule-exceptions', [

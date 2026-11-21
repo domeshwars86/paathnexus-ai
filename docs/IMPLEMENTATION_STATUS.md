@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.264 — Edit active dated schedule change details
+- **Finding:** Workspace managers could create and cancel closures, class cancellations, and extra lessons, but could not correct a title or note after creating one.
+- **Fix:** Added a tenant-scoped, row-locked update endpoint for title and notes on active exceptions. The schedule UI lets managers edit those display details; dates and schedule scope remain fixed after creation. Updated the OpenAPI schema and Hindi workflow.
+- **Verification:** Schedule exception and OpenAPI tests passed; full Laravel suite passed (122 tests, 2,679 assertions). Full Chromium suite passed (53 tests); Vitest passed (12 tests); TypeScript and Vite production build passed. Browser workflow verifies the Hindi edit form and saved result.
+- **Limitations:** Dates, exception types, class/section scope, and lesson assignments cannot be edited; canceled items remain immutable. PostgreSQL row-lock concurrency and hosted CI checks remain pending.
+- **Next:** Add a cancel action for a single dated occurrence of a weekly timetable lesson, with assignment and tenant checks.
+
 ## Milestone 0.263 — Add a privacy-scoped public educator directory
 - **Finding:** The `/educators` page explained the platform but did not let visitors discover instructors who had opted into public display.
 - **Fix:** Added a searchable, paginated public educator API and directory cards on the `/educators` route. The API includes only active opted-in profiles for active teacher memberships in active workspaces and returns public profile fields without emails, user IDs, or employee codes. Added the API contract and generated OpenAPI update.

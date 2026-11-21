@@ -327,6 +327,14 @@ test('academic timetable and dated schedule controls are localized in Hindi work
       section_id: null, section_name: null, subject: 'Science', subject_id: 'science', teacher_profile_id: null, teacher_name: null,
       weekday: 5, starts_at: '10:00', ends_at: '10:45', room: 'Lab 2',
     }]);
+    if (path.endsWith('/schedule-exceptions/hindi-extra-lesson') && route.request().method() === 'PUT') {
+      const body = route.request().postDataJSON() as { title: string; notes: string | null };
+      return send({
+        id: 'hindi-extra-lesson', academic_year_id: 'hindi-year', exception_date: '2026-11-21', type: 'extra', title: body.title, notes: body.notes,
+        class_id: 'class-8', class_name: 'Class 8', section_id: null, section_name: null, timetable_entry_id: null, subject_id: 'science',
+        subject: 'Science', teacher_profile_id: null, teacher_name: null, starts_at: '11:00', ends_at: '11:45', room: 'Lab 2', status: 'active', cancelled_at: null,
+      });
+    }
     if (path.endsWith('/schedule-exceptions')) return send([{
       id: 'hindi-extra-lesson', academic_year_id: 'hindi-year', exception_date: '2026-11-21', type: 'extra', title: 'Science revision', notes: null,
       class_id: 'class-8', class_name: 'Class 8', section_id: null, section_name: null, timetable_entry_id: null, subject_id: 'science',
@@ -346,6 +354,13 @@ test('academic timetable and dated schedule controls are localized in Hindi work
   await expect(page.locator('.schedule-exception-row')).toContainText('सक्रिय');
   await expect(page.locator('.schedule-exception-row')).toContainText('21');
   await expect(page.getByRole('button', { name: 'तारीख़ का बदलाव सहेजें' })).toBeVisible();
+  await page.locator('.schedule-exception-row').getByRole('button', { name: 'विवरण संपादित करें' }).click();
+  const editForm = page.locator('.schedule-exception-form').filter({ hasText: 'समय-सारणी बदलाव का विवरण संपादित करें' });
+  await editForm.getByLabel('शीर्षक').fill('संशोधित विज्ञान पाठ');
+  await editForm.getByLabel('टिप्पणियाँ').fill('नई जानकारी');
+  await editForm.getByRole('button', { name: 'विवरण सहेजें' }).click();
+  await expect(page.locator('.schedule-exception-row')).toContainText('संशोधित विज्ञान पाठ');
+  await expect(page.locator('.schedule-exception-row')).toContainText('नई जानकारी');
 });
 
 test('workspace search opens a matching announcement in the manager view', async ({ page }) => {

@@ -151,6 +151,7 @@ export type ScheduleExceptionInput = {
   notes?: string; class_id?: string; section_id?: string; timetable_entry_id?: string;
   subject_id?: string; teacher_profile_id?: string; starts_at?: string; ends_at?: string; room?: string;
 };
+export type ScheduleExceptionUpdate = { title: string; notes: string | null };
 export type DashboardSummary = {
   active_students_count: number | null;
   active_classes_count: number | null;
@@ -865,6 +866,13 @@ export async function listScheduleExceptions(token: string, organizationId: stri
 export async function createScheduleException(token: string, organizationId: string, input: ScheduleExceptionInput): Promise<ScheduleException> {
   const response = await request<{ data: ScheduleException }>(`/organizations/${encodeURIComponent(organizationId)}/schedule-exceptions`, {
     method: 'POST', body: JSON.stringify(input),
+  }, token);
+  return response.data;
+}
+
+export async function updateScheduleException(token: string, organizationId: string, exceptionId: string, input: ScheduleExceptionUpdate): Promise<ScheduleException> {
+  const response = await request<{ data: ScheduleException }>(`/organizations/${encodeURIComponent(organizationId)}/schedule-exceptions/${encodeURIComponent(exceptionId)}`, {
+    method: 'PUT', body: JSON.stringify(input),
   }, token);
   return response.data;
 }

@@ -12,6 +12,7 @@ use App\Services\TeacherClassScope;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ScheduleExceptionController extends Controller
 {
@@ -134,6 +135,25 @@ class ScheduleExceptionController extends Controller
         $exception = ScheduleException::query()->where('organization_id', $organization->id)->whereKey($exceptionId)->firstOrFail();
         abort_unless($exception->status === 'active', 409, 'This schedule exception has already been cancelled.');
         $exception->update(['status' => 'cancelled', 'cancelled_by' => $request->user()->id, 'cancelled_at' => now()]);
+        return response()->json(['data' => $this->exceptionData($exception->load(['organizationClass:id,name', 'section:id,name', 'subjectCatalog:id,name', 'teacherProfile:id,name']))]);
+    }
+
+    public function update(Request $request, string $organizationId, string $exceptionId): JsonResponse
+    {
+        $organization = $this->memberOrganization($request, $organizationId);
+        abort_unless($request->user()->can('manageAcademic', $organization), 403);
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:120'],
+            'notes' => ['present', 'nullable', 'string', 'max:2000'],
+        ]);
+
+        $exception = DB::transaction(function () use ($organization, $exceptionId, $validated): ScheduleException {
+            $exception = ScheduleException::query()->where('organization_id', $organization->id)->whereKey($exceptionId)->lockForUpdate()->firstOrFail();
+            abort_unless($exception->status === 'active', 409, 'Cancelled schedule changes cannot be edited.');
+            $exception->update($validated);
+            return $exception;
+        });
+
         return response()->json(['data' => $this->exceptionData($exception->load(['organizationClass:id,name', 'section:id,name', 'subjectCatalog:id,name', 'teacherProfile:id,name']))]);
     }
 
