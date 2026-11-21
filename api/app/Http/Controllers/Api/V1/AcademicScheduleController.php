@@ -47,6 +47,7 @@ class AcademicScheduleController extends Controller
         ]);
 
         $year = DB::transaction(function () use ($organization, $validated): AcademicYear {
+            $organization->newQuery()->whereKey($organization->id)->where('status', 'active')->lockForUpdate()->firstOrFail();
             if (($validated['status'] ?? 'planned') === 'active') {
                 $organization->academicYears()->where('status', 'active')->update(['status' => 'completed']);
             }
@@ -515,67 +516,74 @@ class AcademicScheduleController extends Controller
             'room' => ['nullable', 'string', 'max:80'],
         ]);
 
-        $class = $organization->classes()->where('status', 'active')->whereKey($validated['class_id'])->firstOrFail();
-        abort_unless($organization->academicYears()->whereKey($validated['academic_year_id'])->exists(), 404);
-        $subject = ! empty($validated['subject_id'])
-            ? $organization->subjects()->where('status', 'active')->whereKey($validated['subject_id'])->firstOrFail()
-            : null;
-        $teacher = ! empty($validated['teacher_profile_id'])
-            ? $organization->teacherProfiles()->where('status', 'active')->whereKey($validated['teacher_profile_id'])->firstOrFail()
-            : null;
-        if (! empty($validated['section_id'])) {
-            abort_unless($class->sections()->where('status', 'active')->whereKey($validated['section_id'])->exists(), 404);
-        }
-
-        if ($subject) {
-            $classHasOfferings = OrganizationSubjectOffering::query()
-                ->where('organization_id', $organization->id)->where('class_id', $class->id)
-                ->where('academic_year_id', $validated['academic_year_id'])->whereNull('ended_at')->exists();
-            if ($classHasOfferings) {
-                $matchingOffering = OrganizationSubjectOffering::query()
-                    ->where('organization_id', $organization->id)->where('class_id', $class->id)
-                    ->where('academic_year_id', $validated['academic_year_id'])->where('subject_id', $subject->id)
-                    ->whereNull('ended_at')
-                    ->where(function ($query) use ($validated): void {
-                        $query->whereNull('section_id');
-                        if (! empty($validated['section_id'])) $query->orWhere('section_id', $validated['section_id']);
-                    })->exists();
-                abort_unless($matchingOffering, 422, 'This subject is not offered to the selected class or section for the academic year.');
+        return DB::transaction(function () use ($request, $organization, $validated, $entry): TimetableEntry {
+            $organization = Organization::query()->whereKey($organization->id)
+                ->where('status', 'active')->lockForUpdate()->firstOrFail();
+            $entry = $entry
+                ? $organization->timetableEntries()->whereKey($entry->id)->lockForUpdate()->firstOrFail()
+                : null;
+            $class = $organization->classes()->where('status', 'active')->whereKey($validated['class_id'])->firstOrFail();
+            abort_unless($organization->academicYears()->whereKey($validated['academic_year_id'])->exists(), 404);
+            $subject = ! empty($validated['subject_id'])
+                ? $organization->subjects()->where('status', 'active')->whereKey($validated['subject_id'])->firstOrFail()
+                : null;
+            $teacher = ! empty($validated['teacher_profile_id'])
+                ? $organization->teacherProfiles()->where('status', 'active')->whereKey($validated['teacher_profile_id'])->firstOrFail()
+                : null;
+            if (! empty($validated['section_id'])) {
+                abort_unless($class->sections()->where('status', 'active')->whereKey($validated['section_id'])->exists(), 404);
             }
-        }
 
-        $overlap = $organization->timetableEntries()
-            ->where('academic_year_id', $validated['academic_year_id'])->where('class_id', $class->id)
-            ->where('weekday', $validated['weekday'])
-            ->where('starts_at', '<', $validated['ends_at'])->where('ends_at', '>', $validated['starts_at']);
-        if (! empty($validated['section_id'])) {
-            $overlap->where(fn ($query) => $query->whereNull('section_id')->orWhere('section_id', $validated['section_id']));
-        }
-        if ($entry) $overlap->where('id', '<>', $entry->id);
-        abort_if($overlap->exists(), 422, 'This class already has a lesson scheduled in that time slot.');
+            if ($subject) {
+                $classHasOfferings = OrganizationSubjectOffering::query()
+                    ->where('organization_id', $organization->id)->where('class_id', $class->id)
+                    ->where('academic_year_id', $validated['academic_year_id'])->whereNull('ended_at')->exists();
+                if ($classHasOfferings) {
+                    $matchingOffering = OrganizationSubjectOffering::query()
+                        ->where('organization_id', $organization->id)->where('class_id', $class->id)
+                        ->where('academic_year_id', $validated['academic_year_id'])->where('subject_id', $subject->id)
+                        ->whereNull('ended_at')
+                        ->where(function ($query) use ($validated): void {
+                            $query->whereNull('section_id');
+                            if (! empty($validated['section_id'])) $query->orWhere('section_id', $validated['section_id']);
+                        })->exists();
+                    abort_unless($matchingOffering, 422, 'This subject is not offered to the selected class or section for the academic year.');
+                }
+            }
 
-        if ($teacher) {
-            $teacherOverlap = $organization->timetableEntries()
-                ->where('academic_year_id', $validated['academic_year_id'])->where('teacher_profile_id', $teacher->id)
+            $overlap = $organization->timetableEntries()
+                ->where('academic_year_id', $validated['academic_year_id'])->where('class_id', $class->id)
                 ->where('weekday', $validated['weekday'])
                 ->where('starts_at', '<', $validated['ends_at'])->where('ends_at', '>', $validated['starts_at']);
-            if ($entry) $teacherOverlap->where('id', '<>', $entry->id);
-            abort_if($teacherOverlap->exists(), 422, 'This teacher is already scheduled in that time slot.');
-        }
+            if (! empty($validated['section_id'])) {
+                $overlap->where(fn ($query) => $query->whereNull('section_id')->orWhere('section_id', $validated['section_id']));
+            }
+            if ($entry) $overlap->where('id', '<>', $entry->id);
+            abort_if($overlap->exists(), 422, 'This class already has a lesson scheduled in that time slot.');
 
-        $values = [
-            ...$validated,
-            'subject' => $subject?->name ?? trim($validated['subject'] ?? ''),
-            'subject_id' => $subject?->id,
-            'teacher_profile_id' => $teacher?->id,
-        ];
-        if ($entry) {
-            $entry->update($values);
-        } else {
-            $entry = $organization->timetableEntries()->create($values);
-        }
+            if ($teacher) {
+                $teacherOverlap = $organization->timetableEntries()
+                    ->where('academic_year_id', $validated['academic_year_id'])->where('teacher_profile_id', $teacher->id)
+                    ->where('weekday', $validated['weekday'])
+                    ->where('starts_at', '<', $validated['ends_at'])->where('ends_at', '>', $validated['starts_at']);
+                if ($entry) $teacherOverlap->where('id', '<>', $entry->id);
+                abort_if($teacherOverlap->exists(), 422, 'This teacher is already scheduled in that time slot.');
+            }
 
-        return $entry->load(['organizationClass:id,name', 'section:id,name', 'academicYear:id,name', 'subjectCatalog:id,code,name', 'teacherProfile:id,name,employee_code']);
+            $values = [
+                ...$validated,
+                'subject' => $subject?->name ?? trim($validated['subject'] ?? ''),
+                'subject_id' => $subject?->id,
+                'teacher_profile_id' => $teacher?->id,
+            ];
+            if ($entry) {
+                $entry->update($values);
+            } else {
+                $entry = $organization->timetableEntries()->create($values);
+            }
+
+            return $entry->load(['organizationClass:id,name', 'section:id,name', 'academicYear:id,name', 'subjectCatalog:id,code,name', 'teacherProfile:id,name,employee_code']);
+        });
     }
 
     private function memberOrganization(Request $request, string $organizationId): Organization

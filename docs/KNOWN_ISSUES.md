@@ -58,3 +58,4 @@
 - Guardian link, relink, and end operations now serialize on the active workspace; repeated links update the existing row. SQLite verifies lifecycle semantics, but row-lock concurrency still needs PostgreSQL CI.
 - Live-session updates and joins now serialize on the tenant-scoped session row; joins recheck participant scope and meeting time after acquiring the lock. Existing tests verify sequential lifecycle and access behavior; concurrent first-join and competing transition execution still need PostgreSQL CI.
 - Custom-role assignment and archival now serialize on the tenant-scoped role row. Existing assignments remain attached to archived profiles; concurrent assignment/archive behavior still needs PostgreSQL CI verification.
+- Active-year changes and timetable writes now lock the workspace and repeat overlap checks inside transactions. SQLite verifies sequential conflict behavior; concurrent active-year and overlapping schedule writes still need PostgreSQL CI.

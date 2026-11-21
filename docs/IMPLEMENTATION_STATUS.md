@@ -2,6 +2,12 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.254 — Serialize active academic year and timetable writes
+- **Finding:** Concurrent active-year creation could leave multiple active years. Timetable overlap checks ran outside a transaction, allowing concurrent writes to reserve the same class or teacher time slot.
+- **Fix:** Active-year creation now locks the organization like year activation. Timetable create/update now locks the organization and re-runs all tenant, offering, section, and overlap checks inside the transaction.
+- **Verification:** Focused academic scheduling workflow passed (1 test, 342 assertions); full Laravel suite passed (121 tests, 2,642 assertions); PHP lint and `git diff --check` passed. SQLite does not exercise row-lock concurrency; PostgreSQL CI remains necessary.
+- **Next:** Continue remaining API-scope and release-readiness audits.
+
 ## Milestone 0.253 — Serialize custom-role assignment and archival
 - **Finding:** Role assignment checked `archived_at` outside a transaction, while archival updated the same role independently, allowing a concurrent assignment to succeed after archival.
 - **Fix:** Both assignment and archival now lock the organization-scoped role row before checking or changing its state. Existing assigned members remain on archived profiles.
