@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.281 — Localize the student roster
+- **Finding:** The student directory exposed workspace profiles and allowed authorized educators to add learners, but its search, status, empty states, and creation form remained English-only.
+- **Fix:** Added English/Hindi labels and states for the roster, active counts, search, student creation, and errors. Roster data remains scoped to the active organization, creation still requires `academic.manage`, and entered names/codes are preserved. Added a narrow-viewport Hindi browser journey covering search, creation, and read-only controls.
+- **Verification:** Full Chromium suite passed (58 tests), including the new 390-pixel roster flow and the existing accessibility scans. Vitest passed (12 tests); TypeScript and production build passed.
+- **Limitations:** Server-provided errors and most remaining workspace forms/content are not fully localized.
+- **Next:** Localize the remaining academic account-linking and workspace error states while continuing ERP/LMS and release-readiness work.
+
 ## Milestone 0.280 — Localize question CSV import
 - **Finding:** Assessment authoring, quiz attempts, and review were localized, but the question CSV import panel and its preview states remained English-only.
 - **Fix:** Added English/Hindi copy for CSV instructions, template download, file selection, loading and importing states, row summary/status labels, type names, option counts, fallbacks, and the import action. CSV headers, payloads, preview-before-save behavior, and the existing 100-question/1 MB limits are unchanged. Added a Hindi browser journey covering preview and import.

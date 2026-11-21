@@ -137,6 +137,7 @@ function translateLearnerStatus(status: string, t: (key: TranslationKey) => stri
 }
 
 function StudentsDirectoryPanel({ token, organization }: { token: string; organization: Organization }) {
+  const { t } = useLocale();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -150,7 +151,7 @@ function StudentsDirectoryPanel({ token, organization }: { token: string; organi
   async function refresh() {
     setLoading(true); setError('');
     try { setStudents(await listStudents(token, organization.id)); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not load the student roster.'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : t('students.loadError')); }
     finally { setLoading(false); }
   }
 
@@ -167,15 +168,15 @@ function StudentsDirectoryPanel({ token, organization }: { token: string; organi
       const created = await createStudent(token, organization.id, { name: name.trim(), student_code: studentCode.trim() });
       setStudents((items) => [...items, created].sort((left, right) => left.name.localeCompare(right.name)));
       setName(''); setStudentCode(''); setFormOpen(false);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not add this student.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('students.addError')); }
     finally { setSaving(false); }
   }
 
-  return <section className="panel academic-panel students-directory-panel"><div className="panel-heading"><div><div className="eyebrow">STUDENT ROSTER</div><h2>Students</h2><p>Find active student profiles in this workspace.</p></div>{canManage && <button type="button" className="task-submit" onClick={() => setFormOpen((open) => !open)}>{formOpen ? 'Cancel' : 'Add student'}</button>}</div>
-    <div className="students-directory-controls"><label><span className="sr-only">Search students by name or student code</span><Search size={15} /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name or student code" /></label><span>{loading ? 'Loading…' : `${students.length} active ${students.length === 1 ? 'student' : 'students'}`}</span></div>
+  return <section className="panel academic-panel students-directory-panel"><div className="panel-heading"><div><div className="eyebrow">{t('students.eyebrow')}</div><h2>{t('students.title')}</h2><p>{t('students.description')}</p></div>{canManage && <button type="button" className="task-submit" onClick={() => setFormOpen((open) => !open)}>{formOpen ? t('students.cancel') : t('students.addStudent')}</button>}</div>
+    <div className="students-directory-controls"><label><span className="sr-only">{t('students.searchLabel')}</span><Search size={15} /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('students.searchPlaceholder')} /></label><span>{loading ? t('students.loading') : t(students.length === 1 ? 'students.activeOne' : 'students.activeMany').replace('{count}', String(students.length))}</span></div>
     {error && <div className="academic-error" role="alert">{error}</div>}
-    {formOpen && canManage && <form className="task-form students-create-form" onSubmit={(event) => void submit(event)}><label>Student name<input autoComplete="off" required maxLength={160} value={name} onChange={(event) => setName(event.target.value)} /></label><label>Student code<input autoComplete="off" required maxLength={64} value={studentCode} onChange={(event) => setStudentCode(event.target.value)} /></label><button className="task-submit" disabled={saving || !name.trim() || !studentCode.trim()}>{saving ? 'Saving…' : 'Add to roster'}</button></form>}
-    {loading ? <div className="task-message">Loading student roster…</div> : filteredStudents.length ? <div className="students-directory-grid" aria-live="polite">{filteredStudents.map((student) => <article className="students-directory-card" key={student.id}><span className="student-directory-avatar" aria-hidden="true">{student.name.trim().slice(0, 1).toLocaleUpperCase()}</span><span className="students-directory-identity"><strong>{student.name}</strong><small>{student.student_code}</small></span><span className="student-directory-status">Active</span></article>)}</div> : <div className="academic-empty">{query.trim() ? 'No students match your search.' : 'No active student profiles are in this workspace yet.'}</div>}
+    {formOpen && canManage && <form className="task-form students-create-form" onSubmit={(event) => void submit(event)}><label>{t('students.name')}<input autoComplete="off" required maxLength={160} value={name} onChange={(event) => setName(event.target.value)} /></label><label>{t('students.code')}<input autoComplete="off" required maxLength={64} value={studentCode} onChange={(event) => setStudentCode(event.target.value)} /></label><button className="task-submit" disabled={saving || !name.trim() || !studentCode.trim()}>{saving ? t('students.saving') : t('students.addToRoster')}</button></form>}
+    {loading ? <div className="task-message">{t('students.loadingRoster')}</div> : filteredStudents.length ? <div className="students-directory-grid" aria-live="polite">{filteredStudents.map((student) => <article className="students-directory-card" key={student.id}><span className="student-directory-avatar" aria-hidden="true">{student.name.trim().slice(0, 1).toLocaleUpperCase()}</span><span className="students-directory-identity"><strong>{student.name}</strong><small>{student.student_code}</small></span><span className="student-directory-status">{t('students.active')}</span></article>)}</div> : <div className="academic-empty">{query.trim() ? t('students.noMatch') : t('students.empty')}</div>}
   </section>;
 }
 

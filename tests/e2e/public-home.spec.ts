@@ -1291,6 +1291,59 @@ test('guardian with results access sees a future exam for their linked learner',
   await expectNoHorizontalOverflow(page);
 });
 
+test('student roster follows Hindi and keeps student creation permission-scoped', async ({ page }) => {
+  test.setTimeout(90_000);
+  const organizationId = 'student-roster-locale-org';
+  let canManageRoster = true;
+  let students = [{ id: 'student-roster-asha', name: 'Asha Learner', student_code: 'ST-001' }];
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem('paathnexus.locale', 'hi');
+    sessionStorage.setItem('paathnexus.session-token', 'student-roster-locale-token');
+    sessionStorage.setItem('paathnexus.active-organization', 'student-roster-locale-org');
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const send = (data: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ data }) });
+    if (path.endsWith('/auth/me')) return send({ user: { name: 'Ari Educator', email: 'ari@example.test' }, organizations: [{ id: organizationId, name: 'Fixture Academy', slug: 'fixture-academy', type: 'school', role: 'educator', permissions: canManageRoster ? ['workspace.view', 'academic.view', 'academic.manage'] : ['workspace.view', 'academic.view'], locale: 'en', timezone: 'Asia/Kolkata' }] });
+    if (path.endsWith('/dashboard')) return send({ active_students_count: students.length, active_classes_count: 0, active_enrollments_count: 0, unassigned_students_count: 0, pending_tasks_count: 0, latest_attendance_rate: null, latest_attendance_class: null, latest_attendance_date: null, attendance_series: [], classes: [], today_schedule: [], schedule_notice: null, schedule_weekday: 4, active_academic_year_id: null });
+    if (path.endsWith(`/organizations/${organizationId}/students`) && route.request().method() === 'POST') {
+      const payload = route.request().postDataJSON() as { name: string; student_code: string };
+      const student = { id: 'student-roster-ravi', ...payload };
+      students = [...students, student];
+      return send(student, 201);
+    }
+    if (path.endsWith(`/organizations/${organizationId}/students`)) return send(students);
+    return send([]);
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'नेविगेशन खोलें' }).click();
+  const navigation = page.getByRole('navigation', { name: 'मुख्य नेविगेशन' });
+  await navigation.getByRole('button', { name: 'विद्यार्थी', exact: true }).click();
+  const roster = page.locator('.students-directory-panel');
+  await expect(roster.getByRole('heading', { name: 'विद्यार्थी' })).toBeVisible();
+  await expect(roster.getByText('1 सक्रिय विद्यार्थी')).toBeVisible();
+  await expect(roster.getByText('Asha Learner')).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await roster.getByRole('button', { name: 'विद्यार्थी जोड़ें' }).click();
+  await roster.getByLabel('विद्यार्थी का नाम').fill('Ravi Student');
+  await roster.getByLabel('विद्यार्थी कोड', { exact: true }).fill('ST-002');
+  await roster.getByRole('button', { name: 'सूची में जोड़ें' }).click();
+  await expect(roster.getByText('Ravi Student')).toBeVisible();
+  await expect(roster.getByText('2 सक्रिय विद्यार्थी')).toBeVisible();
+  await roster.getByRole('searchbox', { name: 'नाम या विद्यार्थी कोड से विद्यार्थी खोजें' }).fill('ST-002');
+  await expect(roster.getByText('Ravi Student')).toBeVisible();
+  await expect(roster.getByText('Asha Learner')).toHaveCount(0);
+
+  canManageRoster = false;
+  await page.reload();
+  await page.getByRole('navigation', { name: 'मुख्य नेविगेशन' }).getByRole('button', { name: 'विद्यार्थी', exact: true }).click();
+  await expect(page.locator('.students-directory-panel').getByRole('button', { name: 'विद्यार्थी जोड़ें' })).toHaveCount(0);
+  await expect(page.locator('.students-directory-panel').getByText('Ravi Student')).toBeVisible();
+});
+
 test('assessment-only teacher can author quizzes without course-edit controls', async ({ page }) => {
   const organizationId = 'assessment-teacher-org-fixture';
   const courseId = 'assessment-teacher-course-fixture';
