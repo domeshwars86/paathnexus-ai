@@ -17,6 +17,7 @@ import { isoToWorkspaceDateTime, workspaceDateTimeToIso } from './lib/timezone';
 import { encodeCsv } from './lib/csv';
 import { encodeFeeInvoiceCsv } from './lib/feeInvoiceCsv';
 import { LanguageSwitcher, useLocale, type Locale, type TranslationKey } from './lib/locale';
+import { WorkspaceOnboarding } from './WorkspaceOnboarding';
 
 const MarketplacePanel = lazy(() => import('./MarketplacePanel'));
 const CustomTeacherRolesPanel = lazy(() => import('./CustomTeacherRolesPanel'));
@@ -2616,6 +2617,7 @@ function Workspace({ token, user, organization, organizations, onSwitchOrganizat
           if (result.type === 'announcement' && !canManageAnnouncements) setShowNotifications(true);
         }} />
         {notice && <div className="toast" role="status"><span><Check size={15} /></span>{notice}<button onClick={() => setNotice('')} aria-label="Dismiss"><X size={15} /></button></div>}
+        {activePage === 'Overview' && organization.role === 'owner' && <WorkspaceOnboarding token={token} organization={organization} onNavigate={(page) => { setActivePage(page); setMobileNav(false); }} />}
 
         {(activePage === 'My classes' || activePage === 'Attendance') && (hasPermission(organization, 'academic.view') || hasPermission(organization, 'academic.manage')) && (activePage !== 'Attendance' || hasPermission(organization, 'attendance.read')) && <MyClassesPanel key={organization.id} token={token} organization={organization} showAttendanceHistory={activePage === 'Attendance'} onAttendanceRecorded={(rate, className, date) => { setAttendance(rate); setAttendanceClassName(className); setAttendanceSavedDate(date); void getDashboardSummary(token, organization.id).then(setDashboard).catch((error: Error) => setDashboardError(error.message)); }} />}
         {activePage === 'Students' && ['owner', 'admin', 'educator'].includes(organization.role) && <>{(hasPermission(organization, 'academic.view') || hasPermission(organization, 'academic.manage')) && <StudentsDirectoryPanel key={`students-${organization.id}`} token={token} organization={organization} />}{hasPermission(organization, 'members.manage') && <InvitationsPanel key={`invites-${organization.id}`} token={token} organization={organization} onNavigate={(page) => { setActivePage(page); setMobileNav(false); }} />}{hasPermission(organization, 'academic.manage') && <GuardianLinksPanel key={`guardians-${organization.id}`} token={token} organization={organization} />}</>}
