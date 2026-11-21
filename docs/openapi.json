@@ -9508,6 +9508,55 @@
                 ]
             }
         },
+        "/platform/users/lookup": {
+            "post": {
+                "operationId": "postSubscriptionLookupUserPlatformUsersLookup",
+                "summary": "Perform Lookup User",
+                "description": "Request validation, response fields, capabilities, and tenant scope are documented in [API_SPECIFICATION.md](API_SPECIFICATION.md).",
+                "tags": [
+                    "Subscription"
+                ],
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformUserLookupResponse"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Error response. Status and field errors depend on the operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "The endpoint accepts JSON input. See API_SPECIFICATION.md for field-level validation.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PlatformUserLookupRequest"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/webhooks/payments/sandbox": {
             "post": {
                 "operationId": "postPaymentWebhookSandboxWebhooksPaymentsSandbox",
@@ -14108,6 +14157,121 @@
                     },
                     "meta": {
                         "$ref": "#/components/schemas/PlatformPaginationMeta"
+                    }
+                }
+            },
+            "PlatformUserWorkspaceRecord": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "name",
+                    "slug",
+                    "organization_status",
+                    "role",
+                    "membership_status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "organization_status": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "suspended"
+                        ]
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "membership_status": {
+                        "type": "string"
+                    }
+                }
+            },
+            "PlatformUserRecord": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "account_status",
+                    "email_verified_at",
+                    "created_at",
+                    "workspaces"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "account_status": {
+                        "type": "string"
+                    },
+                    "email_verified_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "workspaces": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PlatformUserWorkspaceRecord"
+                        }
+                    }
+                }
+            },
+            "PlatformUserLookupResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/PlatformUserRecord"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                }
+            },
+            "PlatformUserLookupRequest": {
+                "type": "object",
+                "required": [
+                    "email"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 254
                     }
                 }
             },

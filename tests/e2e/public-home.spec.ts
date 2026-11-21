@@ -939,6 +939,7 @@ test('educator AI tutor and teaching draft controls follow the Hindi locale', as
 
 test('platform admin sees aggregate usage and daily history for workspaces', async ({ page }) => {
   const organizationId = 'platform-admin-org-fixture';
+  let lookedUpEmail = '';
   let aiTutorFlag = { key: 'ai_tutor', label: 'AI Tutor', description: 'Allow students and educators to use the workspace AI tutor.', enabled: true, default_enabled: true, updated_at: null, updated_by_id: null };
   await page.addInitScript(() => {
     sessionStorage.setItem('paathnexus.session-token', 'platform-admin-fixture-token');
@@ -954,6 +955,10 @@ test('platform admin sees aggregate usage and daily history for workspaces', asy
     if (path.endsWith('/platform/usage/history')) return send({ days: 90, snapshots: [{ snapshot_date: '2026-11-18', organization_count: 2, active_organization_count: 1, suspended_organization_count: 1, active_membership_count: 2, active_student_count: 1, active_course_count: 2, active_subscription_count: 1 }, { snapshot_date: '2026-11-19', organization_count: 3, active_organization_count: 2, suspended_organization_count: 1, active_membership_count: 4, active_student_count: 3, active_course_count: 5, active_subscription_count: 2 }] });
     if (path.endsWith('/platform/organizations')) return send([{ id: 'directory-school', name: 'Sample School', slug: 'sample-school', type: 'school', status: 'active', current_plan_name: 'Learning plan', subscription_status: 'active', active_members_count: 2, active_students_count: 1, active_courses_count: 3, created_at: '2026-06-03T00:00:00Z' }], { meta: { total: 1, current_page: 1, last_page: 1 } });
     if (path.endsWith('/platform/audit-logs')) return send([{ id: 1, actor_id: null, event: 'feature_flag.disabled', subject_type: 'feature_flag', subject_id: 'ai_tutor', created_at: '2026-11-19T10:00:00Z' }]);
+    if (path.endsWith('/platform/users/lookup') && route.request().method() === 'POST') {
+      lookedUpEmail = (route.request().postDataJSON() as { email: string }).email;
+      return send({ id: 42, name: 'Synthetic Learner', email: lookedUpEmail, account_status: 'active', email_verified_at: '2026-11-18T10:00:00Z', created_at: '2026-11-17T10:00:00Z', workspaces: [{ id: 'member-school', name: 'North Academy', slug: 'north-academy', organization_status: 'active', role: 'student', membership_status: 'active' }] });
+    }
     if (path.endsWith('/platform/feature-flags/ai_tutor') && route.request().method() === 'PUT') { aiTutorFlag = { ...aiTutorFlag, enabled: false }; return send(aiTutorFlag); }
     if (path.endsWith('/platform/feature-flags')) return send([aiTutorFlag]);
     return send([]);
@@ -995,6 +1000,11 @@ test('platform admin sees aggregate usage and daily history for workspaces', asy
   await expect(page.getByRole('button', { name: 'AI ट्यूटर बंद करें' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'AI ट्यूटर बंद करें' }).click();
   await expect(page.getByRole('button', { name: 'AI ट्यूटर चालू करें' })).toHaveAttribute('aria-pressed', 'false');
+  await page.getByLabel('खाते का ईमेल').fill('learner@example.test');
+  await page.getByRole('button', { name: 'खाता खोजें' }).click();
+  await expect(page.getByText('Synthetic Learner')).toBeVisible();
+  await expect(page.getByText('North Academy')).toBeVisible();
+  expect(lookedUpEmail).toBe('learner@example.test');
   await expect(page.getByText('प्लेटफ़ॉर्म की हाल की गतिविधि')).toBeVisible();
 });
 

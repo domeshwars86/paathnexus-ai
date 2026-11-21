@@ -1052,6 +1052,23 @@ class ExportOpenApi extends Command
                         'properties' => ['id' => ['type' => 'integer', 'minimum' => 1], 'actor_id' => ['type' => ['integer', 'null']], 'event' => ['type' => 'string'], 'subject_type' => ['type' => ['string', 'null']], 'subject_id' => ['type' => ['string', 'null']], 'created_at' => ['type' => 'string']],
                     ],
                     'PlatformAuditLogsResponse' => ['type' => 'object', 'required' => ['data', 'meta'], 'properties' => ['data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PlatformAuditLogRecord']], 'meta' => ['$ref' => '#/components/schemas/PlatformPaginationMeta']]],
+                    'PlatformUserWorkspaceRecord' => ['type' => 'object', 'required' => ['id', 'name', 'slug', 'organization_status', 'role', 'membership_status'], 'properties' => [
+                        'id' => ['type' => 'string', 'format' => 'uuid'], 'name' => ['type' => 'string'], 'slug' => ['type' => 'string'],
+                        'organization_status' => ['type' => 'string', 'enum' => ['active', 'suspended']], 'role' => ['type' => 'string'],
+                        'membership_status' => ['type' => 'string'],
+                    ]],
+                    'PlatformUserRecord' => ['type' => 'object', 'required' => ['id', 'name', 'email', 'account_status', 'email_verified_at', 'created_at', 'workspaces'], 'properties' => [
+                        'id' => ['type' => 'integer', 'minimum' => 1], 'name' => ['type' => 'string'], 'email' => ['type' => 'string', 'format' => 'email'],
+                        'account_status' => ['type' => 'string'], 'email_verified_at' => ['type' => ['string', 'null'], 'format' => 'date-time'],
+                        'created_at' => ['type' => ['string', 'null'], 'format' => 'date-time'],
+                        'workspaces' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PlatformUserWorkspaceRecord']],
+                    ]],
+                    'PlatformUserLookupResponse' => ['type' => 'object', 'required' => ['data'], 'properties' => ['data' => ['oneOf' => [
+                        ['$ref' => '#/components/schemas/PlatformUserRecord'], ['type' => 'null'],
+                    ]]]],
+                    'PlatformUserLookupRequest' => ['type' => 'object', 'required' => ['email'], 'properties' => [
+                        'email' => ['type' => 'string', 'format' => 'email', 'maxLength' => 254],
+                    ]],
                     'PlatformUsageCounts' => [
                         'type' => 'object', 'required' => ['organization_count', 'active_organization_count', 'suspended_organization_count', 'active_membership_count', 'active_student_count', 'active_course_count', 'active_subscription_count'],
                         'properties' => ['organization_count' => ['type' => 'integer', 'minimum' => 0], 'active_organization_count' => ['type' => 'integer', 'minimum' => 0], 'suspended_organization_count' => ['type' => 'integer', 'minimum' => 0], 'active_membership_count' => ['type' => 'integer', 'minimum' => 0], 'active_student_count' => ['type' => 'integer', 'minimum' => 0], 'active_course_count' => ['type' => 'integer', 'minimum' => 0], 'active_subscription_count' => ['type' => 'integer', 'minimum' => 0]],
@@ -2423,6 +2440,7 @@ class ExportOpenApi extends Command
             'api/v1/platform/organizations/{organizationId}/status' => 'PlatformOrganizationStatusResponse',
             'api/v1/platform/organizations' => 'PlatformOrganizationsResponse',
             'api/v1/platform/audit-logs' => 'PlatformAuditLogsResponse',
+            'api/v1/platform/users/lookup' => 'PlatformUserLookupResponse',
             'api/v1/platform/usage' => 'PlatformUsageResponse',
             'api/v1/platform/usage/history' => 'PlatformUsageHistoryResponse',
             'api/v1/platform/subscription-requests' => 'PendingSubscriptionRequestsResponse',
@@ -2588,6 +2606,7 @@ class ExportOpenApi extends Command
             'api/v1/organizations/{organizationId}/tasks/{taskId}' => 'UpdateOrganizationTaskRequest',
             'api/v1/organizations/{organizationId}/subscription/requests' => 'RequestSubscriptionChangeRequest',
             'api/v1/platform/organizations/{organizationId}/status' => 'UpdateOrganizationStatusRequest',
+            'api/v1/platform/users/lookup' => 'PlatformUserLookupRequest',
             'api/v1/platform/feature-flags/{flag}' => 'SetPlatformFeatureFlagRequest',
             'api/v1/platform/plans' => 'CreateSubscriptionPlanRequest',
             'api/v1/platform/plans/{planId}' => 'UpdateSubscriptionPlanRequest',
@@ -2730,6 +2749,7 @@ class ExportOpenApi extends Command
             'api/v1/organizations/{organizationId}/assignments/{assignmentId}/submissions',
             'api/v1/organizations/{organizationId}/courses/{courseId}/assignments/{assignmentId}/submissions/{submissionId}/grade',
             'api/v1/organizations/{organizationId}/courses/{courseId}/assignments/{assignmentId}/attachments',
+            'api/v1/platform/users/lookup',
         ], true);
     }
 

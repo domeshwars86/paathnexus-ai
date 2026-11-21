@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\OrganizationSubscription;
 use App\Models\SubscriptionPlan;
+use App\Models\User;
 use App\Services\PlatformUsageMetrics;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -151,6 +152,28 @@ class SubscriptionController extends Controller
             ])->values(),
             'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
         ]);
+    }
+
+    public function lookupUser(Request $request): JsonResponse
+    {
+        $this->requirePlatformAdmin($request);
+        $validated = $request->validate(['email' => ['required', 'string', 'email:rfc', 'max:254']]);
+        $user = User::query()->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($validated['email']))])->first();
+        if (! $user) return response()->json(['data' => null]);
+
+        $workspaces = $user->organizations()->orderBy('organizations.name')->get()
+            ->map(fn (Organization $organization): array => [
+                'id' => $organization->id, 'name' => $organization->name, 'slug' => $organization->slug,
+                'organization_status' => $organization->status, 'role' => $organization->pivot->role,
+                'membership_status' => $organization->pivot->status,
+            ])->values();
+        $this->audit($request, 'platform.user_lookup', 'user', (string) $user->id, ['workspace_count' => $workspaces->count()]);
+
+        return response()->json(['data' => [
+            'id' => $user->id, 'name' => $user->name, 'email' => $user->email,
+            'account_status' => $user->account_status, 'email_verified_at' => $user->email_verified_at?->toIso8601String(),
+            'created_at' => $user->created_at?->toIso8601String(), 'workspaces' => $workspaces,
+        ]]);
     }
 
     public function updateOrganizationStatus(Request $request, string $organizationId): JsonResponse

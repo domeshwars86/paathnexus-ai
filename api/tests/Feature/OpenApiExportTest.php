@@ -263,6 +263,7 @@ class OpenApiExportTest extends TestCase
         $assertRequestSchema('/platform/plans/{planId}', 'put', 'UpdateSubscriptionPlanRequest');
         $assertRequestSchema('/platform/subscription-requests/{organizationId}/resolve', 'post', 'ResolveSubscriptionRequest');
         $assertRequestSchema('/platform/feature-flags/{flag}', 'put', 'SetPlatformFeatureFlagRequest');
+        $assertRequestSchema('/platform/users/lookup', 'post', 'PlatformUserLookupRequest');
         $this->assertSame('#/components/schemas/AnnouncementListResponse', $document['paths']['/organizations/{organizationId}/announcements']['get']['responses']['200']['content']['application/json']['schema']['$ref']);
         $this->assertSame('#/components/schemas/AnnouncementCreatedResponse', $document['paths']['/organizations/{organizationId}/announcements']['post']['responses']['201']['content']['application/json']['schema']['$ref']);
         $this->assertSame('#/components/schemas/OrganizationTaskListResponse', $document['paths']['/organizations/{organizationId}/tasks']['get']['responses']['200']['content']['application/json']['schema']['$ref']);
@@ -273,6 +274,8 @@ class OpenApiExportTest extends TestCase
         $this->assertSame('#/components/schemas/SubscriptionRequestResolutionResponse', $document['paths']['/platform/subscription-requests/{organizationId}/resolve']['post']['responses']['200']['content']['application/json']['schema']['$ref']);
         $this->assertSame('#/components/schemas/PlatformOrganizationsResponse', $document['paths']['/platform/organizations']['get']['responses']['200']['content']['application/json']['schema']['$ref']);
         $this->assertSame('#/components/schemas/PlatformAuditLogsResponse', $document['paths']['/platform/audit-logs']['get']['responses']['200']['content']['application/json']['schema']['$ref']);
+        $this->assertSame('#/components/schemas/PlatformUserLookupResponse', $document['paths']['/platform/users/lookup']['post']['responses']['200']['content']['application/json']['schema']['$ref']);
+        $this->assertSame(['email'], $document['components']['schemas']['PlatformUserLookupRequest']['required']);
         $this->assertSame('#/components/schemas/PlatformUsageResponse', $document['paths']['/platform/usage']['get']['responses']['200']['content']['application/json']['schema']['$ref']);
         $this->assertSame('#/components/schemas/PlatformUsageHistoryResponse', $document['paths']['/platform/usage/history']['get']['responses']['200']['content']['application/json']['schema']['$ref']);
         $this->assertSame('#/components/schemas/PlatformFeatureFlagsResponse', $document['paths']['/platform/feature-flags']['get']['responses']['200']['content']['application/json']['schema']['$ref']);

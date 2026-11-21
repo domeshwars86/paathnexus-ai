@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.266 — Add audited platform account lookup
+- **Finding:** Platform admins could manage organizations and subscriptions but had no account lookup for support investigations.
+- **Fix:** Added an allowlist-only, rate-limited exact-email lookup with a minimal account and workspace-membership summary. Successful lookups create a metadata-only audit entry; the API omits learner/teacher profiles, credentials, and tokens. Added the lookup panel, English/Hindi copy, and OpenAPI request/response schemas.
+- **Verification:** Focused platform lookup and OpenAPI tests passed (3 tests, 850 assertions); full Laravel suite passed (124 tests, 2,705 assertions); full Chromium suite passed (53 tests); Vitest passed (12 tests); TypeScript and production build passed. The platform admin browser workflow submits an exact email and displays only the returned summary.
+- **Limitations:** This is read-only lookup. Account recovery/support actions and basic content moderation are not implemented. Platform admin access remains allowlist-configured.
+- **Next:** Add audited platform moderation controls for public course and educator listings while preserving tenant-owned records.
+
 ## Milestone 0.265 — Cancel one dated timetable lesson
 - **Finding:** Managers could cancel a whole class or section day, but the UI did not expose the API's support for canceling one weekly lesson on one date.
 - **Fix:** The dated cancellation form now offers only lessons matching the selected active academic year, class, section, and weekday. Selecting a lesson sends its timetable entry ID; the recurring timetable remains intact. The extra-lesson conflict check now distinguishes a single-lesson cancellation from a whole-day cancellation.

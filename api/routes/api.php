@@ -72,6 +72,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/platform/usage', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'usage']);
         Route::get('/platform/usage/history', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'usageHistory']);
         Route::get('/platform/organizations', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'organizations']);
+        Route::post('/platform/users/lookup', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'lookupUser'])->middleware('throttle:10,1');
         Route::get('/platform/audit-logs', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'auditLogs']);
         Route::get('/platform/feature-flags', [\App\Http\Controllers\Api\V1\PlatformFeatureFlagController::class, 'index']);
         Route::put('/platform/feature-flags/{flag}', [\App\Http\Controllers\Api\V1\PlatformFeatureFlagController::class, 'update'])
