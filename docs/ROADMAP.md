@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Sprint sequence
+Milestone 0.251 serializes guardian-student link and unlink operations; focused guardian workflow and the full Laravel suite pass (121 tests, 2,642 assertions). PostgreSQL concurrency verification remains pending.
 Milestone 0.250 aligns the invitation-registration path with workspace-first lock ordering; the focused and full Laravel suites pass (121 tests, 2,639 assertions).
 Milestone 0.249 serializes workspace invitation creation/acceptance and blocks stale invitations from changing an active member's role. Focused coverage and the full Laravel suite pass (121 tests, 2,639 assertions); PostgreSQL concurrency verification remains pending.
 Milestone 0.248 closes the invoice-void/payment-capture race with matching organization-to-invoice lock order; the full Laravel suite passes (121 tests, 2,636 assertions). PostgreSQL concurrency verification remains pending; continue the remaining API-scope and release-readiness audits.

@@ -56,23 +56,25 @@ class GuardianController extends Controller
             'guardian_user_id' => ['required', 'integer'],
             'relationship' => ['required', Rule::in(['parent', 'guardian', 'grandparent', 'caregiver', 'other'])],
         ]);
-        $student = $organization->students()->where('status', 'active')->whereKey($validated['student_id'])->firstOrFail();
-        $guardian = $organization->users()->whereKey($validated['guardian_user_id'])->wherePivot('status', 'active')
-            ->wherePivot('role', 'guardian')->where('users.account_status', 'active')->firstOrFail();
+        [$link, $status] = DB::transaction(function () use ($organization, $validated, $request): array {
+            $lockedOrganization = Organization::query()->whereKey($organization->id)
+                ->where('status', 'active')->lockForUpdate()->firstOrFail();
+            $student = $lockedOrganization->students()->where('status', 'active')->whereKey($validated['student_id'])->firstOrFail();
+            $guardian = $lockedOrganization->users()->whereKey($validated['guardian_user_id'])->wherePivot('status', 'active')
+                ->wherePivot('role', 'guardian')->where('users.account_status', 'active')->firstOrFail();
+            $link = GuardianStudentLink::query()->where('organization_id', $lockedOrganization->id)
+                ->where('student_id', $student->id)->where('guardian_user_id', $guardian->id)->lockForUpdate()->first();
+            if ($link) {
+                $link->forceFill(['relationship' => $validated['relationship'], 'status' => 'active', 'linked_by' => $request->user()->id, 'linked_at' => now(), 'ended_at' => null])->save();
+                return [$link, 200];
+            }
 
-        $link = GuardianStudentLink::where('organization_id', $organization->id)
-            ->where('student_id', $student->id)->where('guardian_user_id', $guardian->id)->first();
-        if ($link) {
-            $link->forceFill(['relationship' => $validated['relationship'], 'status' => 'active', 'linked_by' => $request->user()->id, 'linked_at' => now(), 'ended_at' => null])->save();
-            $status = 200;
-        } else {
-            $link = GuardianStudentLink::create([
-                'organization_id' => $organization->id, 'student_id' => $student->id,
+            return [GuardianStudentLink::create([
+                'organization_id' => $lockedOrganization->id, 'student_id' => $student->id,
                 'guardian_user_id' => $guardian->id, 'relationship' => $validated['relationship'],
                 'status' => 'active', 'linked_by' => $request->user()->id, 'linked_at' => now(),
-            ]);
-            $status = 201;
-        }
+            ]), 201];
+        });
         $link->load(['student:id,student_code,name', 'guardian:id,name,email']);
 
         return response()->json(['data' => [
@@ -87,8 +89,15 @@ class GuardianController extends Controller
     {
         $organization = $this->organization($request, $organizationId);
         abort_unless($request->user()->can('manageAcademic', $organization), 403);
-        $link = GuardianStudentLink::query()->where('organization_id', $organization->id)->where('status', 'active')->whereKey($linkId)->firstOrFail();
-        $link->forceFill(['status' => 'ended', 'ended_at' => now()])->save();
+        $link = DB::transaction(function () use ($organization, $linkId): GuardianStudentLink {
+            $lockedOrganization = Organization::query()->whereKey($organization->id)
+                ->where('status', 'active')->lockForUpdate()->firstOrFail();
+            $link = GuardianStudentLink::query()->where('organization_id', $lockedOrganization->id)
+                ->where('status', 'active')->whereKey($linkId)->lockForUpdate()->firstOrFail();
+            $link->forceFill(['status' => 'ended', 'ended_at' => now()])->save();
+
+            return $link;
+        });
         return response()->json(['data' => ['id' => $link->id, 'status' => $link->status]]);
     }
 

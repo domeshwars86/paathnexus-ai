@@ -2,6 +2,12 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.251 — Serialize guardian-student link lifecycle
+- **Finding:** Concurrent guardian-link requests could race between lookup and insert, violating the unique workspace/student/guardian key and returning a server error. Link and end requests could also overlap without a shared lifecycle lock.
+- **Fix:** Create/relink and end now lock the active workspace first, then revalidate members and lock the scoped link row. Repeated requests update the existing link and preserve its ID.
+- **Verification:** Focused guardian-link workflow passed (1 test, 342 assertions); full Laravel suite passed (121 tests, 2,642 assertions); PHP lint and `git diff --check` passed. PostgreSQL concurrency remains a CI verification item.
+- **Next:** Continue the remaining API-scope and release-readiness audits.
+
 ## Milestone 0.250 — Align invitation registration lock order
 - **Finding:** Invitation acceptance and creation lock the workspace before invitation state, but registering a new account from an invitation locked only the invitation before querying its workspace.
 - **Fix:** New-account invitation registration now locks the active workspace first, then the invitation, and rechecks whether the email already has an account inside the transaction. All three invite lifecycle paths now use workspace-first locking.

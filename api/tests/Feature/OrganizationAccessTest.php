@@ -731,6 +731,9 @@ class OrganizationAccessTest extends TestCase
             ->postJson($base.'/guardian-student-links', [
                 'student_id' => $learner['id'], 'guardian_user_id' => $guardianAccount->id, 'relationship' => 'parent',
             ])->assertCreated()->assertJsonPath('data.student_name', 'Nila Sen')->json('data');
+        $this->actingAs($owner, 'sanctum')->postJson($base.'/guardian-student-links', [
+            'student_id' => $learner['id'], 'guardian_user_id' => $guardianAccount->id, 'relationship' => 'caregiver',
+        ])->assertOk()->assertJsonPath('data.id', $guardianLink['id'])->assertJsonPath('data.relationship', 'caregiver');
         $this->actingAs($guardianAccount, 'sanctum')
             ->getJson($base.'/guardian/students')
             ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.student_name', 'Nila Sen');
