@@ -63,18 +63,19 @@ class SupportFeedbackController extends Controller
     {
         $organization = $this->memberOrganization($request, $organizationId);
         abort_unless($request->user()->can('manageMembers', $organization), 403);
-        $feedback = SupportFeedback::query()->where('organization_id', $organization->id)->whereKey($feedbackId)->firstOrFail();
         $validated = $request->validate([
             'status' => ['required', Rule::in(['open', 'resolved'])],
             'response' => ['nullable', 'string', 'max:5000'],
         ]);
-        $response = array_key_exists('response', $validated)
-            ? (trim((string) $validated['response']) ?: null)
-            : $feedback->response;
-        $statusChanged = $feedback->status !== $validated['status'];
-        $responseChanged = $feedback->response !== $response;
 
-        DB::transaction(function () use ($feedback, $request, $validated, $response, $statusChanged, $responseChanged): void {
+        $feedback = DB::transaction(function () use ($organization, $feedbackId, $request, $validated): SupportFeedback {
+            $feedback = SupportFeedback::query()->where('organization_id', $organization->id)
+                ->whereKey($feedbackId)->lockForUpdate()->firstOrFail();
+            $response = array_key_exists('response', $validated)
+                ? (trim((string) $validated['response']) ?: null)
+                : $feedback->response;
+            $statusChanged = $feedback->status !== $validated['status'];
+            $responseChanged = $feedback->response !== $response;
             $attributes = ['status' => $validated['status'], 'response' => $response];
             if ($responseChanged) {
                 $attributes['responded_by'] = $response === null ? null : $request->user()->id;
@@ -88,9 +89,11 @@ class SupportFeedbackController extends Controller
                     ['read_at' => null, 'created_at' => now()],
                 );
             }
+
+            return $feedback->fresh()->load('responder:id,name');
         });
 
-        return response()->json(['data' => $this->data($feedback->fresh()->load('responder:id,name'), true)]);
+        return response()->json(['data' => $this->data($feedback, true)]);
     }
 
     private function memberOrganization(Request $request, string $organizationId): Organization

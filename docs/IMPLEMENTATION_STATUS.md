@@ -2,6 +2,12 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.259 — Serialize support-feedback updates
+- **Finding:** Feedback response and status changes were compared against a model loaded before the transaction, so overlapping manager updates could overwrite newer response data or miss a notification transition.
+- **Fix:** The controller now locks the workspace-scoped feedback row, derives omitted fields and change flags from the locked row, saves the response/status, and updates the submitter notification in the same transaction.
+- **Verification:** Focused feedback workflow passed (3 tests, 62 assertions); full Laravel suite passed (121 tests, 2,646 assertions). SQLite does not exercise row-lock concurrency; PostgreSQL CI remains necessary.
+- **Next:** Continue API-scope and release-readiness audits.
+
 ## Milestone 0.258 — Serialize task lifecycle changes
 - **Finding:** Task edit, completion, archive, and restore checked state before saving without a row lock, so overlapping requests could violate the archived-task rules.
 - **Fix:** All four tenant-scoped lifecycle operations now lock and re-read the task in a transaction before checking state or saving.
