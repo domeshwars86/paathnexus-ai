@@ -45,6 +45,32 @@ test('public homepage stays usable without horizontal overflow at target viewpor
   await expect(page.getByRole('region', { name: 'Educator workflow' })).toBeAttached();
 });
 
+test('public feature, educator, course, and pricing pages support direct routes and responsive layouts', async ({ page }) => {
+  await page.route('**/api/v1/catalog/courses**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [], meta: { total: 0, current_page: 1, last_page: 1 } }) }));
+  await page.route('**/api/v1/catalog/plans', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [] }) }));
+
+  const routes = [
+    ['/features', 'Tools for the whole learning community', 'Platform | PaathNexus AI'],
+    ['/educators', 'Build your teaching practice around learning.', 'For educators | PaathNexus AI'],
+    ['/courses', 'Explore public courses', 'Courses | PaathNexus AI'],
+    ['/pricing', 'Choose a starting point', 'Pricing | PaathNexus AI'],
+  ] as const;
+
+  for (const [path, heading, title] of routes) {
+    await page.goto(path);
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('main').getByRole('heading', { name: heading })).toBeVisible();
+    await expect(page).toHaveTitle(title);
+    await expect(page.getByRole('contentinfo')).toBeVisible();
+    await expect(page.locator('.public-hero')).toBeHidden();
+    for (const width of responsiveWidths) {
+      await page.setViewportSize({ width, height: 900 });
+      const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(scrollWidth, `${path} should not overflow horizontally at ${width}px`).toBeLessThanOrEqual(width + 1);
+    }
+  }
+});
+
 test('public site and sign-in support Hindi and remember the language choice', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.route('**/api/v1/catalog/courses**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [], meta: { total: 0, current_page: 1, last_page: 1 } }) }));
@@ -522,7 +548,8 @@ test('mobile navigation opens and closes with Escape and restores keyboard focus
 
   await closedMenu.click();
   await page.getByRole('navigation', { name: 'Public navigation' }).getByRole('link', { name: 'Platform' }).click();
-  await expect(page).toHaveURL(/#features$/);
+  await expect(page).toHaveURL(/\/features$/);
+  await expect(page.getByRole('heading', { name: 'Tools for the whole learning community' })).toBeVisible();
   await expect(closedMenu).toHaveAttribute('aria-expanded', 'false');
   await expect(closedMenu).toBeFocused();
 });

@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.261 — Add shareable public product pages
+- **Finding:** Platform features, educator tools, public courses, and pricing were only homepage anchor sections, so visitors could not link directly to those product pages.
+- **Fix:** Added client-side `/features`, `/educators`, `/courses`, and `/pricing` routes using the existing responsive sections and live public catalog data, with browser-history navigation, active-page semantics, and route-specific document titles.
+- **Verification:** Focused Chromium suite passed (3 tests) for direct routes, mobile navigation/focus, and homepage layout across 320–1440px; `npm run build` passed.
+- **Limitations:** Instructor profiles are shown with opted-in public courses; a standalone searchable instructor directory is not implemented.
+- **Next:** Implement resumable organization onboarding for newly registered workspace owners.
+
 ## Milestone 0.260 — Serialize assessment answers with submission
 - **Finding:** Answer saves checked attempt status before writing without the attempt lock, so an autosave could race with submission and mutate an answer after its score was calculated. Duplicate submissions also re-used a stale in-memory state after waiting for the same lock.
 - **Fix:** Answer saves now lock and re-read the tenant-, assessment-, and learner-scoped attempt before rechecking status/expiry and upserting the answer. Submission rechecks status after acquiring that same attempt lock.

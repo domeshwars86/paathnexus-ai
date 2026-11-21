@@ -80,6 +80,12 @@
 .public-skip-link{position:absolute;top:8px;left:8px;z-index:100;transform:translateY(-150%);padding:10px 14px;border-radius:7px;background:#29255f;color:#fff;font-size:12px;font-weight:700;text-decoration:none}
 .public-skip-link:focus{transform:translateY(0)}
 
+/* Public product sections are also independently shareable pages. */
+.public-page-features .public-hero,.public-page-features .public-trust,.public-page-features .public-educators,.public-page-features .public-catalog,.public-page-features .public-pricing,
+.public-page-educators .public-hero,.public-page-educators .public-trust,.public-page-educators .public-features,.public-page-educators .public-catalog,.public-page-educators .public-pricing,
+.public-page-courses .public-hero,.public-page-courses .public-trust,.public-page-courses .public-features,.public-page-courses .public-educators,.public-page-courses .public-pricing,
+.public-page-pricing .public-hero,.public-page-pricing .public-trust,.public-page-pricing .public-features,.public-page-pricing .public-educators,.public-page-pricing .public-catalog{display:none}
+
 /* Keep muted public-site text readable against white and tinted sections. */
 .public-site{--public-muted:#686a7d}
 .public-nav nav a,.public-hero-actions>a,.public-hero-copy>p,.public-proof span,.public-trust>div,.public-course-info>small,.public-course-info>div,.public-plan-card li,.public-footer{color:#686a7d}

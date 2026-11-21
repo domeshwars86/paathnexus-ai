@@ -6,6 +6,16 @@ import { listPublicCourses, listPublicPlans, type PublicCourse, type PublicPlan 
 import { LanguageSwitcher, useLocale } from './lib/locale';
 
 type Props = { onSignIn: () => void; onRegister: () => void };
+type PublicPage = 'home' | 'features' | 'educators' | 'courses' | 'pricing';
+
+const publicRoutes: Record<PublicPage, string> = {
+  home: '/', features: '/features', educators: '/educators', courses: '/courses', pricing: '/pricing',
+};
+
+function pageFromPath(pathname: string): PublicPage {
+  const route = Object.entries(publicRoutes).find(([, path]) => path === pathname.replace(/\/$/, '') || (path === '/' && pathname === '/'));
+  return (route?.[0] as PublicPage | undefined) ?? 'home';
+}
 
 function price(plan: PublicPlan, locale: 'en' | 'hi', translate: (key: 'home.free' | 'home.contactPricing') => string): string {
   if (plan.amount_paise === null || plan.billing_interval === 'custom') return translate('home.contactPricing');
@@ -20,6 +30,7 @@ function coursePrice(amountPaise: number, locale: 'en' | 'hi', freeLabel: string
 
 export default function PublicHome({ onSignIn, onRegister }: Props) {
   const { locale, t } = useLocale();
+  const [publicPage, setPublicPage] = useState<PublicPage>(() => pageFromPath(window.location.pathname));
   const [courses, setCourses] = useState<PublicCourse[]>([]);
   const [plans, setPlans] = useState<PublicPlan[]>([]);
   const [total, setTotal] = useState(0);
@@ -68,13 +79,27 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
   }
 
   useEffect(() => {
-    void loadCourses();
-    void loadPlans();
+    document.documentElement.lang = locale === 'hi' ? 'hi-IN' : 'en';
+  }, [locale]);
+
+  useEffect(() => {
+    const labels: Record<PublicPage, string> = {
+      home: 'One Platform. Infinite Possibilities for Learning.',
+      features: t('nav.platform'), educators: t('nav.educators'), courses: t('nav.courses'), pricing: t('nav.pricing'),
+    };
+    document.title = `${labels[publicPage]} | PaathNexus AI`;
+  }, [publicPage, t]);
+
+  useEffect(() => {
+    const onPopState = () => setPublicPage(pageFromPath(window.location.pathname));
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   useEffect(() => {
-    document.documentElement.lang = locale === 'hi' ? 'hi-IN' : 'en';
-  }, [locale]);
+    if (publicPage === 'home' || publicPage === 'courses') void loadCourses();
+    if (publicPage === 'home' || publicPage === 'pricing') void loadPlans();
+  }, [publicPage]);
 
   useEffect(() => {
     if (!selectedCourse) return;
@@ -139,18 +164,28 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
     }
   }
 
-  return <div className="public-site">
+  function navigateTo(event: ReactMouseEvent<HTMLAnchorElement>, nextPage: PublicPage) {
+    event.preventDefault();
+    if (publicPage !== nextPage) {
+      window.history.pushState({}, '', publicRoutes[nextPage]);
+      setPublicPage(nextPage);
+    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    closeMobileNav(true);
+  }
+
+  return <div className={`public-site public-page-${publicPage}`}>
     <a className="public-skip-link" href="#main-content">{t('common.skip')}</a>
     <header className="public-nav">
-      <a className="public-brand" href="#home" aria-label={t('nav.home')} onClick={() => closeMobileNav(true)}>
+      <a className="public-brand" href="/" aria-label={t('nav.home')} onClick={(event) => navigateTo(event, 'home')}>
         <span className="public-brand-mark"><GraduationCap size={21} /></span>
         <strong>paath<span>nexus</span><small>AI</small></strong>
       </a>
       <nav id="public-navigation" className={`public-nav-links ${mobileNavOpen ? 'is-open' : ''}`} aria-label={t('nav.public')}>
-        <a href="#features" onClick={() => closeMobileNav(true)}>{t('nav.platform')}</a>
-        <a href="#educators" onClick={() => closeMobileNav(true)}>{t('nav.educators')}</a>
-        <a href="#courses" onClick={() => closeMobileNav(true)}>{t('nav.courses')}</a>
-        <a href="#pricing" onClick={() => closeMobileNav(true)}>{t('nav.pricing')}</a>
+        <a href="/features" aria-current={publicPage === 'features' ? 'page' : undefined} onClick={(event) => navigateTo(event, 'features')}>{t('nav.platform')}</a>
+        <a href="/educators" aria-current={publicPage === 'educators' ? 'page' : undefined} onClick={(event) => navigateTo(event, 'educators')}>{t('nav.educators')}</a>
+        <a href="/courses" aria-current={publicPage === 'courses' ? 'page' : undefined} onClick={(event) => navigateTo(event, 'courses')}>{t('nav.courses')}</a>
+        <a href="/pricing" aria-current={publicPage === 'pricing' ? 'page' : undefined} onClick={(event) => navigateTo(event, 'pricing')}>{t('nav.pricing')}</a>
         <a className="public-mobile-signin" href="#signin" onClick={(event) => { event.preventDefault(); closeMobileNav(); onSignIn(); }}>{t('nav.signIn')}</a>
         <LanguageSwitcher className="public-language-switcher" />
       </nav>
@@ -171,7 +206,7 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
         <p>{t('home.description')}</p>
         <div className="public-hero-actions">
           <button className="public-primary" onClick={onRegister}>{t('home.createWorkspace')} <ArrowRight size={16} /></button>
-          <a href="#features">{t('home.explore')}</a>
+        <a href="/features" onClick={(event) => navigateTo(event, 'features')}>{t('home.explore')}</a>
         </div>
         <div className="public-proof">
           <span><Check size={14} /> {t('home.proofAcademic')}</span>
@@ -258,7 +293,7 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
 
     <section className="public-final-cta"><div><span className="public-kicker">PAATHNEXUS AI</span><h2>{t('home.finalTitle')}</h2><p>{t('home.finalDescription')}</p></div><button className="public-primary" onClick={onRegister}>{t('home.createWorkspace')} <ArrowRight size={16} /></button></section>
     </main>
-    <footer className="public-footer"><a className="public-brand" href="#home"><span className="public-brand-mark"><GraduationCap size={19} /></span><strong>paath<span>nexus</span><small>AI</small></strong></a><span>{t('home.tagline')}</span><a href="mailto:support@paathnexus.com">{t('home.contact')}</a><small>© 2026 PaathNexus AI</small></footer>
+    <footer className="public-footer"><a className="public-brand" href="/" onClick={(event) => navigateTo(event, 'home')}><span className="public-brand-mark"><GraduationCap size={19} /></span><strong>paath<span>nexus</span><small>AI</small></strong></a><span>{t('home.tagline')}</span><a href="mailto:support@paathnexus.com">{t('home.contact')}</a><small>© 2026 PaathNexus AI</small></footer>
 
     {selectedCourse && <div className="public-course-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedCourse(null); }}>
       <section ref={courseDialog} className="public-course-dialog" role="dialog" aria-modal="true" aria-labelledby="public-course-dialog-title">
