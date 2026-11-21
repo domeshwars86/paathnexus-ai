@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.276 — Localize quiz and question authoring
+- **Finding:** Assessment managers could create questions and publish timed quizzes, but the question bank, scheduling, randomization, and short-answer rubric controls remained English-only.
+- **Fix:** Added English/Hindi translations for question types, difficulty, answer options, rubric criteria and weights, question-bank filters, quiz scheduling, randomization, sampling guidance, and validation/fallback errors. Correct-answer privacy and assessment API data are unchanged.
+- **Verification:** Full Chromium suite passed (57 tests), including Hindi assessment-only authoring coverage; Vitest passed (12 tests); TypeScript and production build passed. No backend code changed.
+- **Limitations:** Assessment attempt review and result pages still contain untranslated content. Imported question workflows and some provider/API messages also remain English-only.
+- **Next:** Localize assessment review/results and the remaining workspace error states, then continue ERP/LMS and release-readiness work.
+
 ## Milestone 0.275 — Localize assignment authoring
 - **Finding:** Educators creating course assignments saw English-only fields and file guidance even when the workspace used Hindi.
 - **Fix:** Localized assignment title/instructions, points, workspace-timezone due-date guidance, resource-file limits, selected-file count, publish state, and invalid-time/create fallback errors. Assignment data and upload limits are unchanged.

@@ -1285,6 +1285,7 @@ test('assessment-only teacher can author quizzes without course-edit controls', 
   const organizationId = 'assessment-teacher-org-fixture';
   const courseId = 'assessment-teacher-course-fixture';
   await page.addInitScript(() => {
+    localStorage.setItem('paathnexus.locale', 'hi');
     sessionStorage.setItem('paathnexus.session-token', 'assessment-teacher-fixture-token');
     sessionStorage.setItem('paathnexus.active-organization', 'assessment-teacher-org-fixture');
   });
@@ -1299,14 +1300,18 @@ test('assessment-only teacher can author quizzes without course-edit controls', 
   });
 
   await page.goto('/');
-  await expectNoHorizontalOverflow(page);
-  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Courses', exact: true }).click();
+  await page.getByRole('navigation', { name: 'मुख्य नेविगेशन' }).getByRole('button', { name: 'कोर्स', exact: true }).click();
   await expectNoHorizontalOverflow(page);
   await expect(page.getByRole('heading', { name: 'Assessment scope course' })).toBeVisible();
-  await expect(page.getByText('Add question', { exact: true })).toBeVisible();
-  await expect(page.getByText('Publish timed quiz', { exact: true })).toBeVisible();
-  await expect(page.getByText('Create course', { exact: true })).toHaveCount(0);
-  await expect(page.getByText('Add lesson', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('क्विज़ और परीक्षाएँ', { exact: true })).toBeVisible();
+  await expect(page.getByText('प्रश्न जोड़ें', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('प्रश्न', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('उत्तर का प्रकार')).toBeVisible();
+  await expect(page.getByText('समयबद्ध क्विज़ प्रकाशित करें', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('क्विज़ का शीर्षक')).toBeVisible();
+  await expect(page.getByLabel('प्रश्न खोजें')).toBeVisible();
+  await expect(page.getByText('कोर्स बनाएँ', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('पाठ जोड़ें', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('navigation', { name: 'Tools' }).getByRole('button', { name: 'Reports' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'This week' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Take attendance/ })).toHaveCount(0);
