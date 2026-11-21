@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.283 — Localize course workflow fallback errors
+- **Finding:** Course authoring forms were translated, but generic fallback messages for course loading, progress, assignment uploads/submissions, grading, and attachment downloads could still surface in English.
+- **Fix:** Added English/Hindi fallbacks and attachment-download progress copy for those course operations. Partial assignment-upload warnings translate the fixed guidance while preserving the server-provided detail. API requests and error messages are unchanged.
+- **Verification:** Full Chromium suite passed (59 tests); Vitest passed (12 tests); TypeScript and production build passed.
+- **Limitations:** API-generated validation and network errors remain in their original language; fallback messages in other workspace modules still need review.
+- **Next:** Continue auditing common workspace fallback/error states and remaining academic controls, then proceed with ERP/LMS and release-readiness work.
+
 ## Milestone 0.282 — Localize learner account linking
 - **Finding:** Workspace managers could link an existing student profile to an eligible learner account from the course workspace, but the linking form and its guidance were English-only.
 - **Fix:** Added English/Hindi copy for the profile and account selectors, unlinked state, save/loading action, guidance, and generic fallback error. The request still sends the same selected profile and nullable account ID through the existing organization-scoped API. Added a Hindi browser regression that verifies the submitted account ID.

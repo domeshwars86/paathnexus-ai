@@ -1810,6 +1810,7 @@ function GuardianSummaryPanel({ token, organization }: { token: string; organiza
 function AssignmentAttachmentList({ token, organizationId, courseId, assignmentId, attachments, label }: {
   token: string; organizationId: string; courseId: string; assignmentId: string; attachments: AssignmentAttachment[]; label: string;
 }) {
+  const { t } = useLocale();
   const [downloadingId, setDownloadingId] = useState('');
   const [error, setError] = useState('');
   async function download(attachment: AssignmentAttachment) {
@@ -1818,11 +1819,11 @@ function AssignmentAttachmentList({ token, organizationId, courseId, assignmentI
       const blob = await downloadAssignmentAttachment(token, organizationId, courseId, assignmentId, attachment.id);
       const url = URL.createObjectURL(blob); const anchor = document.createElement('a');
       anchor.href = url; anchor.download = attachment.name; anchor.click(); URL.revokeObjectURL(url);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not download this file.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('courseErrors.downloadFile')); }
     finally { setDownloadingId(''); }
   }
   if (!attachments.length) return null;
-  return <div className="assignment-attachments"><strong>{label}</strong>{attachments.map((attachment) => <button key={attachment.id} type="button" className="assignment-attachment-link" disabled={downloadingId === attachment.id} onClick={() => void download(attachment)}>{downloadingId === attachment.id ? 'Downloading…' : `${attachment.name} · ${(attachment.size_bytes / 1024 / 1024).toFixed(2)} MB`}</button>)}{error && <small className="academic-error" role="alert">{error}</small>}</div>;
+  return <div className="assignment-attachments"><strong>{label}</strong>{attachments.map((attachment) => <button key={attachment.id} type="button" className="assignment-attachment-link" disabled={downloadingId === attachment.id} onClick={() => void download(attachment)}>{downloadingId === attachment.id ? t('courseErrors.downloading') : `${attachment.name} · ${(attachment.size_bytes / 1024 / 1024).toFixed(2)} MB`}</button>)}{error && <small className="academic-error" role="alert">{error}</small>}</div>;
 }
 
 function CoursesPanel({ token, organization }: { token: string; organization: Organization }) {
@@ -1939,7 +1940,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
       setCourses(nextCourses); setStudents(nextStudents); setStudentCandidates(nextCandidates);
       setInstructorCandidates(canManageAcademic ? await listCourseInstructorCandidates(token, organization.id) : []);
       setSelectedCourseId((current) => nextCourses.some((course) => course.id === current) ? current : nextCourses[0]?.id ?? '');
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not load courses.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('courseErrors.load')); }
     finally { setLoading(false); }
   }
 
@@ -1972,7 +1973,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
       setEnrollments((enrollmentData as CourseEnrollment[] | undefined) ?? []);
       setProgress((progressData as CourseProgress[] | undefined) ?? []);
       setSelectedAssignmentId((current) => nextAssignments.some((assignment) => assignment.id === current) ? current : nextAssignments[0]?.id ?? '');
-    }).catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : 'Could not load course details.'); });
+    }).catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : t('courseErrors.loadDetails')); });
     return () => { cancelled = true; };
   }, [token, organization.id, selectedCourseId, canManageCourses, canManageAssessments]);
 
@@ -1981,7 +1982,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
     let cancelled = false;
     listAssignmentSubmissions(token, organization.id, selectedCourseId, selectedAssignmentId)
       .then((items) => { if (!cancelled) setSubmissions(items); })
-      .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : 'Could not load assignment submissions.'); });
+      .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : t('courseErrors.loadSubmissions')); });
     return () => { cancelled = true; };
   }, [token, organization.id, selectedCourseId, selectedAssignmentId, canManageCourses]);
 
@@ -1990,7 +1991,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
     let cancelled = false;
     Promise.all(assessments.map(async (assessment) => [assessment.id, await listAssessmentAttempts(token, organization.id, selectedCourseId, assessment.id)] as const))
       .then((items) => { if (!cancelled) setAssessmentResults(Object.fromEntries(items)); })
-      .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : 'Could not load quiz results.'); });
+    .catch((cause) => { if (!cancelled) setError(cause instanceof Error ? cause.message : t('courseErrors.loadQuizResults')); });
     return () => { cancelled = true; };
   }, [token, organization.id, selectedCourseId, assessments, canManageAssessments]);
 
@@ -2078,7 +2079,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
     if (!selectedCourseId) return;
     setSaving(true); setError('');
     try { await updateLessonProgress(token, organization.id, selectedCourseId, lessonId, status, studentId); await refreshDetails(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not save lesson progress.'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : t('courseErrors.saveProgress')); }
     finally { setSaving(false); }
   }
 
@@ -2096,7 +2097,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
       setAssignmentTitle(''); setAssignmentInstructions(''); setAssignmentPoints('100'); setAssignmentDueAt(''); setAssignmentResourceFiles([]); await refreshDetails();
       if (files.length) {
         try { await uploadAssignmentResources(token, organization.id, selectedCourseId, assignment.id, files); await refreshDetails(); }
-        catch (cause) { await refreshDetails(); setError(`Assignment published, but its files did not upload. Add them from the assignment card. ${cause instanceof Error ? cause.message : ''}`); }
+        catch (cause) { await refreshDetails(); setError(t('courseErrors.assignmentPublishedFilesFailed').replace('{details}', cause instanceof Error ? cause.message : '').trim()); }
       }
     } catch (cause) { setError(cause instanceof Error ? cause.message : t('courseForm.createAssignmentError')); }
     finally { setSaving(false); }
@@ -2106,7 +2107,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
     if (!selectedCourseId || !files.length) return;
     setSaving(true); setError('');
     try { await uploadAssignmentResources(token, organization.id, selectedCourseId, assignmentId, files); await refreshDetails(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not upload assignment files.'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : t('courseErrors.uploadFiles')); }
     finally { setSaving(false); }
   }
 
@@ -2116,7 +2117,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
     if (!text && !files.length) return;
     setSaving(true); setError('');
     try { await submitCourseAssignment(token, organization.id, assignmentId, text, files); setSubmissionDrafts((drafts) => ({ ...drafts, [assignmentId]: '' })); setSubmissionFiles((current) => ({ ...current, [assignmentId]: [] })); await refreshDetails(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not submit assignment.'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : t('courseErrors.submitAssignment')); }
     finally { setSaving(false); }
   }
 
@@ -2125,7 +2126,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
     if (!selectedCourseId || !Number.isFinite(score)) return;
     setSaving(true); setError('');
     try { await gradeCourseSubmission(token, organization.id, selectedCourseId, assignmentId, submissionId, { score, ...(gradingFeedback[submissionId]?.trim() ? { feedback: gradingFeedback[submissionId].trim() } : {}) }); await refreshDetails(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not save grade.'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : t('courseErrors.saveGrade')); }
     finally { setSaving(false); }
   }
 
