@@ -2,6 +2,12 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.252 — Serialize live-session state and first access
+- **Finding:** Concurrent status transitions could validate against stale session state. Concurrent first-time joins could both observe no access row and collide on its unique key.
+- **Fix:** Session updates now lock and revalidate the tenant-scoped session before checking transition rules. Join requests take the same session lock, reauthorize and recheck the time window, then update/create the access record.
+- **Verification:** Focused `LiveSessionTest` passed (2 tests, 46 assertions); full Laravel suite passed (121 tests, 2,642 assertions). PHP lint and diff check pending. SQLite does not exercise row-lock concurrency; PostgreSQL CI remains necessary.
+- **Next:** Continue API-scope and release-readiness audits.
+
 ## Milestone 0.251 — Serialize guardian-student link lifecycle
 - **Finding:** Concurrent guardian-link requests could race between lookup and insert, violating the unique workspace/student/guardian key and returning a server error. Link and end requests could also overlap without a shared lifecycle lock.
 - **Fix:** Create/relink and end now lock the active workspace first, then revalidate members and lock the scoped link row. Repeated requests update the existing link and preserve its ID.

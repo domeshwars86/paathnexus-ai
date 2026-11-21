@@ -89,14 +89,21 @@ class LiveSessionController extends Controller
             'status' => ['required', Rule::in(['live', 'completed', 'cancelled'])],
             'recording_url' => ['nullable', 'url', 'max:2048', $this->httpsRule()],
         ]);
-        $allowed = match ($session->status) {
-            'scheduled' => ['live', 'cancelled'],
-            'live' => ['completed', 'cancelled'],
-            default => [],
-        };
-        abort_unless(in_array($validated['status'], $allowed, true), 409, 'The live-session status transition is not allowed.');
-        abort_if(! empty($validated['recording_url']) && $validated['status'] !== 'completed', 422, 'A recording can only be attached when the session is completed.');
-        $session->forceFill(['status' => $validated['status'], 'recording_url' => $validated['recording_url'] ?? null])->save();
+        $session = DB::transaction(function () use ($organization, $sessionId, $request, $role, $validated): LiveSession {
+            $session = LiveSession::query()->where('organization_id', $organization->id)
+                ->whereKey($sessionId)->lockForUpdate()->firstOrFail();
+            $this->authorizeManager($request, $organization, $session, $role);
+            $allowed = match ($session->status) {
+                'scheduled' => ['live', 'cancelled'],
+                'live' => ['completed', 'cancelled'],
+                default => [],
+            };
+            abort_unless(in_array($validated['status'], $allowed, true), 409, 'The live-session status transition is not allowed.');
+            abort_if(! empty($validated['recording_url']) && $validated['status'] !== 'completed', 422, 'A recording can only be attached when the session is completed.');
+            $session->forceFill(['status' => $validated['status'], 'recording_url' => $validated['recording_url'] ?? null])->save();
+
+            return $session;
+        });
         return response()->json(['data' => $this->data($session->fresh()->load(['classroom:id,name', 'section:id,name', 'course:id,title']), $role)]);
     }
 
@@ -107,10 +114,13 @@ class LiveSessionController extends Controller
         $role = $this->role($request, $organization);
         $session = LiveSession::query()->where('organization_id', $organization->id)->whereKey($sessionId)->firstOrFail();
         $this->authorizeParticipant($request, $organization, $session, $role);
-        $now = now();
-        abort_unless(in_array($session->status, ['scheduled', 'live'], true)
-            && $session->starts_at->lte($now->copy()->addMinutes(15)) && $session->ends_at->gte($now), 409, 'Meeting access is not open.');
-        DB::transaction(function () use ($organization, $session, $request, $now): void {
+        $session = DB::transaction(function () use ($organization, $sessionId, $request, $role): LiveSession {
+            $session = LiveSession::query()->where('organization_id', $organization->id)
+                ->whereKey($sessionId)->lockForUpdate()->firstOrFail();
+            $this->authorizeParticipant($request, $organization, $session, $role);
+            $now = now();
+            abort_unless(in_array($session->status, ['scheduled', 'live'], true)
+                && $session->starts_at->lte($now->copy()->addMinutes(15)) && $session->ends_at->gte($now), 409, 'Meeting access is not open.');
             $access = DB::table('live_session_accesses')->where('organization_id', $organization->id)
                 ->where('live_session_id', $session->id)->where('user_id', $request->user()->id)->lockForUpdate()->first();
             if ($access) {
@@ -124,6 +134,8 @@ class LiveSessionController extends Controller
                     'last_accessed_at' => $now, 'created_at' => $now, 'updated_at' => $now,
                 ]);
             }
+
+            return $session;
         });
         return response()->json(['data' => ['meeting_url' => $session->meeting_url, 'ends_at' => $session->ends_at->toIso8601String()]]);
     }
