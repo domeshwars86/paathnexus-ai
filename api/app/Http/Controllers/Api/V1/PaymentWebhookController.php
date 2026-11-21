@@ -118,6 +118,7 @@ class PaymentWebhookController extends Controller
         $organization = Organization::query()->whereKey($initial->organization_id)->where('status', 'active')->lockForUpdate()->firstOrFail();
         $course = Course::query()->where('organization_id', $organization->id)->whereKey($initial->course_id)->lockForUpdate()->firstOrFail();
         abort_unless($course->status === 'active' && $course->is_public, 409, 'The public course is no longer available.');
+        abort_if(DB::table('platform_content_moderations')->where('content_type', 'course')->where('content_id', $course->id)->where('status', 'hidden')->exists(), 409, 'The public course is no longer available.');
         $order = CourseOrder::query()->where('organization_id', $organization->id)->whereKey($initial->id)->lockForUpdate()->firstOrFail();
         $prior = $this->priorEvent($event['event_id'], $bodyHash);
         if ($prior) return $prior;

@@ -89,6 +89,23 @@ class CourseCheckoutTest extends TestCase
         $this->assertDatabaseCount('course_enrollments', 0);
     }
 
+    public function test_moderating_a_course_after_order_creation_prevents_capture_and_enrollment(): void
+    {
+        config(['services.payments.gateway' => 'sandbox', 'services.payments.sandbox_webhook_secret' => 'course-test-secret']);
+        [$organization, $course, $studentUser] = $this->context();
+        $order = $this->actingAs($studentUser, 'sanctum')->postJson('/api/v1/catalog/courses/'.$course->id.'/orders')->assertCreated();
+        $orderId = $order->json('data.id');
+        $admin = User::factory()->create(['email' => 'moderator@example.test']);
+        config(['platform.admin_emails' => [$admin->email]]);
+
+        $this->actingAs($admin, 'sanctum')->putJson('/api/v1/platform/content-moderation/course/'.$course->id, ['status' => 'hidden'])
+            ->assertOk()->assertJsonPath('data.status', 'hidden');
+        $this->deliver($this->event($organization->id, $orderId, 'moderated-course-capture', 12550))->assertStatus(409);
+
+        $this->assertDatabaseHas('course_orders', ['id' => $orderId, 'status' => 'pending']);
+        $this->assertDatabaseCount('course_enrollments', 0);
+    }
+
     private function context(): array
     {
         $organization = Organization::create(['name' => 'Course Shop', 'slug' => 'course-shop-'.Str::lower(Str::random(6)), 'type' => 'educator', 'status' => 'active']);

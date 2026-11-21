@@ -38,6 +38,7 @@ SQLite is used for the local development database and tests. PostgreSQL remains 
 - `student_study_plans`: private learner study sessions with optional enrolled-course association, scheduled time, duration, and planned/completed lifecycle; composite organization/student and organization/course references preserve tenant integrity.
 - `subscription_plans`, `organization_subscriptions`: global plan catalog with JSON entitlements and a current/requested plan per workspace. Existing workspaces are assigned the seeded Free plan during migration.
 - `platform_audit_logs`: platform plan and subscription decisions with actor, subject, event, and review details.
+- `platform_content_moderations`: platform-only hide/visible state for opted-in public courses and educator profiles, keyed by content type and UUID; tenant content fields are preserved, with an optional moderation reason, actor, and timestamp.
 - `organization_invitations`: workspace, target email, restricted role, hashed single-use token, inviter, expiry, acceptance, and revocation timestamps.
 - `enrollments`: organization, student, class/section, academic year, status.
 - `attendance_sessions`, `attendance_records`: organization, class/optional section/date, recorder, student, status; unique student/session.

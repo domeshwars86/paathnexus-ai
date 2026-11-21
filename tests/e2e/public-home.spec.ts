@@ -940,6 +940,8 @@ test('educator AI tutor and teaching draft controls follow the Hindi locale', as
 test('platform admin sees aggregate usage and daily history for workspaces', async ({ page }) => {
   const organizationId = 'platform-admin-org-fixture';
   let lookedUpEmail = '';
+  let moderationStatus: 'visible' | 'hidden' = 'visible';
+  let moderationReason: string | null = null;
   let aiTutorFlag = { key: 'ai_tutor', label: 'AI Tutor', description: 'Allow students and educators to use the workspace AI tutor.', enabled: true, default_enabled: true, updated_at: null, updated_by_id: null };
   await page.addInitScript(() => {
     sessionStorage.setItem('paathnexus.session-token', 'platform-admin-fixture-token');
@@ -959,6 +961,12 @@ test('platform admin sees aggregate usage and daily history for workspaces', asy
       lookedUpEmail = (route.request().postDataJSON() as { email: string }).email;
       return send({ id: 42, name: 'Synthetic Learner', email: lookedUpEmail, account_status: 'active', email_verified_at: '2026-11-18T10:00:00Z', created_at: '2026-11-17T10:00:00Z', workspaces: [{ id: 'member-school', name: 'North Academy', slug: 'north-academy', organization_status: 'active', role: 'student', membership_status: 'active' }] });
     }
+    if (path.includes('/platform/content-moderation/') && route.request().method() === 'PUT') {
+      const update = route.request().postDataJSON() as { status: 'visible' | 'hidden'; reason: string | null };
+      moderationStatus = update.status; moderationReason = update.reason;
+      return send({ type: 'course', id: '33333333-3333-4333-8333-333333333333', title: 'Public Biology', organization_id: 'member-school', organization_name: 'North Academy', status: moderationStatus, reason: moderationReason, moderated_at: '2026-11-20T10:00:00Z' });
+    }
+    if (path.endsWith('/platform/content-moderation')) return send([{ type: 'course', id: '33333333-3333-4333-8333-333333333333', title: 'Public Biology', organization_id: 'member-school', organization_name: 'North Academy', status: moderationStatus, reason: moderationReason, moderated_at: moderationStatus === 'hidden' ? '2026-11-20T10:00:00Z' : null }], { meta: { total: 1, current_page: 1, last_page: 1 } });
     if (path.endsWith('/platform/feature-flags/ai_tutor') && route.request().method() === 'PUT') { aiTutorFlag = { ...aiTutorFlag, enabled: false }; return send(aiTutorFlag); }
     if (path.endsWith('/platform/feature-flags')) return send([aiTutorFlag]);
     return send([]);
@@ -1003,8 +1011,15 @@ test('platform admin sees aggregate usage and daily history for workspaces', asy
   await page.getByLabel('खाते का ईमेल').fill('learner@example.test');
   await page.getByRole('button', { name: 'खाता खोजें' }).click();
   await expect(page.getByText('Synthetic Learner')).toBeVisible();
-  await expect(page.getByText('North Academy')).toBeVisible();
+  await expect(page.getByText('North Academy', { exact: true })).toBeVisible();
   expect(lookedUpEmail).toBe('learner@example.test');
+  await expect(page.getByText('सार्वजनिक सामग्री मॉडरेशन', { exact: true })).toBeVisible();
+  await expect(page.getByText('Public Biology')).toBeVisible();
+  await page.getByLabel('मॉडरेशन टिप्पणी').fill('नीति समीक्षा');
+  await page.getByRole('button', { name: 'सार्वजनिक सूची से छिपाएँ' }).click();
+  await expect(page.getByText('छिपा हुआ')).toBeVisible();
+  expect(moderationStatus).toBe('hidden');
+  expect(moderationReason).toBe('नीति समीक्षा');
   await expect(page.getByText('प्लेटफ़ॉर्म की हाल की गतिविधि')).toBeVisible();
 });
 

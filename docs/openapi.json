@@ -67,6 +67,9 @@
             "name": "Payment Webhook"
         },
         {
+            "name": "Platform Content Moderation"
+        },
+        {
             "name": "Platform Feature Flag"
         },
         {
@@ -8955,6 +8958,144 @@
                 ]
             }
         },
+        "/platform/content-moderation": {
+            "get": {
+                "operationId": "getPlatformContentModerationIndexPlatformContentModeration",
+                "summary": "List Content Moderation",
+                "description": "Request validation, response fields, capabilities, and tenant scope are documented in [API_SPECIFICATION.md](API_SPECIFICATION.md).",
+                "tags": [
+                    "Platform Content Moderation"
+                ],
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "required": true,
+                        "description": "Public listing type to review.",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "course",
+                                "educator"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "description": "Search opted-in public listing titles, profiles, and workspace names.",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "description": "One-based result page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformModeratableContentListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Error response. Status and field errors depend on the operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumBearer": []
+                    }
+                ]
+            }
+        },
+        "/platform/content-moderation/{type}/{contentId}": {
+            "put": {
+                "operationId": "putPlatformContentModerationUpdatePlatformContentModerationTypeContentId",
+                "summary": "Update Content Moderation",
+                "description": "Request validation, response fields, capabilities, and tenant scope are documented in [API_SPECIFICATION.md](API_SPECIFICATION.md).",
+                "tags": [
+                    "Platform Content Moderation"
+                ],
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "contentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformModerationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Error response. Status and field errors depend on the operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "description": "The endpoint accepts JSON input. See API_SPECIFICATION.md for field-level validation.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePlatformModerationRequest"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/platform/feature-flags": {
             "get": {
                 "operationId": "getPlatformFeatureFlagIndexPlatformFeatureFlags",
@@ -14272,6 +14413,117 @@
                         "type": "string",
                         "format": "email",
                         "maxLength": 254
+                    }
+                }
+            },
+            "PlatformModeratableContentRecord": {
+                "type": "object",
+                "required": [
+                    "type",
+                    "id",
+                    "title",
+                    "organization_id",
+                    "organization_name",
+                    "status",
+                    "reason",
+                    "moderated_at"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "course",
+                            "educator"
+                        ]
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "organization_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "organization_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "hidden",
+                            "visible"
+                        ]
+                    },
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    },
+                    "moderated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                }
+            },
+            "PlatformModeratableContentListResponse": {
+                "type": "object",
+                "required": [
+                    "data",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PlatformModeratableContentRecord"
+                        }
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/PlatformPaginationMeta"
+                    }
+                }
+            },
+            "PlatformModerationResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/PlatformModeratableContentRecord"
+                    }
+                }
+            },
+            "UpdatePlatformModerationRequest": {
+                "type": "object",
+                "required": [
+                    "status"
+                ],
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "hidden",
+                            "visible"
+                        ]
+                    },
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
                     }
                 }
             },

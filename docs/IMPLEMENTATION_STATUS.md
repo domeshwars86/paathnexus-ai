@@ -2,12 +2,19 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.267 — Moderate public course and educator listings
+- **Finding:** Publicly opted-in listings had no platform-level moderation path, and hiding them by changing tenant-owned fields would erase institution intent.
+- **Fix:** Added an allowlist-only platform review queue for active public courses and educator profiles, reversible hide/restore actions with optional notes, and platform audit events. Moderation state lives in a separate table; public discovery, educator summaries, free enrollment, paid order creation, and sandbox payment capture all enforce hidden state. Workspace-owned course/profile fields and existing learning records remain intact. Added English/Hindi admin UI and OpenAPI documentation.
+- **Verification:** Full Laravel suite passed (127 tests, 2,749 assertions); full Chromium suite passed (53 tests); Vitest passed (12 tests); TypeScript and production build passed. PHP syntax checks and the OpenAPI export check passed.
+- **Limitations:** Moderation only covers current, active public opt-in listings. It does not suspend a workspace or revoke existing enrollments/orders. Platform administration remains allowlist-configured; PostgreSQL lock behavior still requires hosted CI verification.
+- **Next:** Add account recovery/support actions, then continue the remaining ERP, LMS and release-readiness backlog.
+
 ## Milestone 0.266 — Add audited platform account lookup
 - **Finding:** Platform admins could manage organizations and subscriptions but had no account lookup for support investigations.
 - **Fix:** Added an allowlist-only, rate-limited exact-email lookup with a minimal account and workspace-membership summary. Successful lookups create a metadata-only audit entry; the API omits learner/teacher profiles, credentials, and tokens. Added the lookup panel, English/Hindi copy, and OpenAPI request/response schemas.
 - **Verification:** Focused platform lookup and OpenAPI tests passed (3 tests, 850 assertions); full Laravel suite passed (124 tests, 2,705 assertions); full Chromium suite passed (53 tests); Vitest passed (12 tests); TypeScript and production build passed. The platform admin browser workflow submits an exact email and displays only the returned summary.
-- **Limitations:** This is read-only lookup. Account recovery/support actions and basic content moderation are not implemented. Platform admin access remains allowlist-configured.
-- **Next:** Add audited platform moderation controls for public course and educator listings while preserving tenant-owned records.
+- **Limitations:** This milestone was read-only lookup. Account recovery/support actions and content moderation were not implemented at that point. Platform admin access remains allowlist-configured.
+- **Next:** Implement reversible platform moderation for opted-in public listings while preserving tenant-owned records.
 
 ## Milestone 0.265 — Cancel one dated timetable lesson
 - **Finding:** Managers could cancel a whole class or section day, but the UI did not expose the API's support for canceling one weekly lesson on one date.

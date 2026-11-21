@@ -20,6 +20,9 @@ class PublicCatalogController extends Controller
     {
         $validated = $request->validate(['q' => ['nullable', 'string', 'max:100'], 'page' => ['nullable', 'integer', 'min:1']]);
         $query = Course::query()->where('status', 'active')->where('is_public', true)
+            ->whereNotExists(fn ($moderations) => $moderations->selectRaw('1')->from('platform_content_moderations')
+                ->whereColumn('platform_content_moderations.content_id', 'courses.id')
+                ->where('platform_content_moderations.content_type', 'course')->where('platform_content_moderations.status', 'hidden'))
             ->whereHas('organization', fn ($organizations) => $organizations->where('status', 'active'))
             ->with(['organization:id,name,slug,type', 'subject:id,name,code', 'instructors:id,name'])
             ->withCount(['lessons' => fn ($lessons) => $lessons->where('status', 'active')])->orderByDesc('created_at');
@@ -36,6 +39,9 @@ class PublicCatalogController extends Controller
 
         return response()->json(['data' => $page->getCollection()->map(function (Course $course): array {
             $instructors = $course->organization->teacherProfiles()->where('status', 'active')->where('is_public', true)
+                ->whereNotExists(fn ($moderations) => $moderations->selectRaw('1')->from('platform_content_moderations')
+                    ->whereColumn('platform_content_moderations.content_id', 'teacher_profiles.id')
+                    ->where('platform_content_moderations.content_type', 'educator')->where('platform_content_moderations.status', 'hidden'))
                 ->whereIn('user_id', $course->instructors->pluck('id'))->orderBy('name')->get(['name', 'public_title', 'public_bio'])
                 ->map(fn ($teacher): array => ['name' => $teacher->name, 'title' => $teacher->public_title, 'bio' => $teacher->public_bio])->values();
 
@@ -64,6 +70,9 @@ class PublicCatalogController extends Controller
     {
         $validated = $request->validate(['q' => ['nullable', 'string', 'max:100'], 'page' => ['nullable', 'integer', 'min:1']]);
         $query = TeacherProfile::query()->where('status', 'active')->where('is_public', true)->whereNotNull('user_id')
+            ->whereNotExists(fn ($moderations) => $moderations->selectRaw('1')->from('platform_content_moderations')
+                ->whereColumn('platform_content_moderations.content_id', 'teacher_profiles.id')
+                ->where('platform_content_moderations.content_type', 'educator')->where('platform_content_moderations.status', 'hidden'))
             ->whereHas('organization', fn ($organizations) => $organizations->where('status', 'active'))
             ->whereHas('user', fn ($users) => $users->where('account_status', 'active'))
             ->whereExists(fn ($members) => $members->selectRaw('1')->from('organization_user as educator_memberships')
@@ -94,6 +103,9 @@ class PublicCatalogController extends Controller
     public function enroll(Request $request, string $courseId): JsonResponse
     {
         $course = Course::query()->whereKey($courseId)->where('status', 'active')->where('is_public', true)
+            ->whereNotExists(fn ($moderations) => $moderations->selectRaw('1')->from('platform_content_moderations')
+                ->whereColumn('platform_content_moderations.content_id', 'courses.id')
+                ->where('platform_content_moderations.content_type', 'course')->where('platform_content_moderations.status', 'hidden'))
             ->whereHas('organization', fn ($organizations) => $organizations->where('status', 'active'))
             ->with('organization')->firstOrFail();
         abort_if($course->price_paise > 0, 402, 'This course requires payment. Checkout is not available yet.');
@@ -105,7 +117,11 @@ class PublicCatalogController extends Controller
             $student = StudentProfile::query()->where('organization_id', $organization->id)->where('user_id', $request->user()->id)
                 ->where('status', 'active')->lockForUpdate()->firstOrFail();
             $lockedCourse = Course::query()->whereKey($course->id)->where('organization_id', $organization->id)
-                ->where('status', 'active')->where('is_public', true)->lockForUpdate()->firstOrFail();
+                ->where('status', 'active')->where('is_public', true)
+                ->whereNotExists(fn ($moderations) => $moderations->selectRaw('1')->from('platform_content_moderations')
+                    ->whereColumn('platform_content_moderations.content_id', 'courses.id')
+                    ->where('platform_content_moderations.content_type', 'course')->where('platform_content_moderations.status', 'hidden'))
+                ->lockForUpdate()->firstOrFail();
             abort_if($lockedCourse->price_paise > 0, 402, 'This course requires payment. Checkout is not available yet.');
             $existing = CourseEnrollment::query()->where('organization_id', $lockedCourse->organization_id)
                 ->where('course_id', $lockedCourse->id)->where('student_id', $student->id)->lockForUpdate()->first();
@@ -136,6 +152,9 @@ class PublicCatalogController extends Controller
     {
         abort_unless(config('services.payments.gateway') === 'sandbox', 503, 'Course checkout is not enabled.');
         $course = Course::query()->whereKey($courseId)->where('status', 'active')->where('is_public', true)
+            ->whereNotExists(fn ($moderations) => $moderations->selectRaw('1')->from('platform_content_moderations')
+                ->whereColumn('platform_content_moderations.content_id', 'courses.id')
+                ->where('platform_content_moderations.content_type', 'course')->where('platform_content_moderations.status', 'hidden'))
             ->whereHas('organization', fn ($organizations) => $organizations->where('status', 'active'))
             ->firstOrFail();
         $result = DB::transaction(function () use ($course, $request): array {
@@ -146,7 +165,11 @@ class PublicCatalogController extends Controller
             $student = StudentProfile::query()->where('organization_id', $organization->id)->where('user_id', $request->user()->id)
                 ->where('status', 'active')->lockForUpdate()->firstOrFail();
             $lockedCourse = Course::query()->whereKey($course->id)->where('organization_id', $organization->id)
-                ->where('status', 'active')->where('is_public', true)->lockForUpdate()->firstOrFail();
+                ->where('status', 'active')->where('is_public', true)
+                ->whereNotExists(fn ($moderations) => $moderations->selectRaw('1')->from('platform_content_moderations')
+                    ->whereColumn('platform_content_moderations.content_id', 'courses.id')
+                    ->where('platform_content_moderations.content_type', 'course')->where('platform_content_moderations.status', 'hidden'))
+                ->lockForUpdate()->firstOrFail();
             abort_if($lockedCourse->price_paise < 1, 422, 'Free courses do not need a checkout order.');
             abort_if(CourseEnrollment::query()->where('organization_id', $organization->id)->where('course_id', $lockedCourse->id)
                 ->where('student_id', $student->id)->where('status', 'active')->exists(), 409, 'This learner is already enrolled in the course.');

@@ -57,6 +57,7 @@ export type WorkspaceSubscription = { status: 'active' | 'change_pending'; plan:
 export type SubscriptionRequest = { organization_id: string; organization_name: string; plan: SubscriptionPlan; requested_plan: SubscriptionPlan; requested_at: string | null };
 export type PlatformOrganization = { id: string; name: string; slug: string; type: string; status: 'active' | 'suspended'; current_plan_name: string | null; subscription_status: string | null; active_members_count: number; active_students_count: number; active_courses_count: number; created_at: string };
 export type PlatformUserLookup = { id: number; name: string; email: string; account_status: string; email_verified_at: string | null; created_at: string | null; workspaces: { id: string; name: string; slug: string; organization_status: 'active' | 'suspended'; role: string; membership_status: string }[] };
+export type PlatformModeratableContent = { type: 'course' | 'educator'; id: string; title: string; organization_id: string; organization_name: string | null; status: 'hidden' | 'visible'; reason: string | null; moderated_at: string | null };
 export type PlatformUsageMetrics = { organization_count: number; active_organization_count: number; suspended_organization_count: number; active_membership_count: number; active_student_count: number; active_course_count: number; active_subscription_count: number };
 export type PlatformUsageSnapshot = PlatformUsageMetrics & { snapshot_date: string };
 export type PlatformUsageHistory = { days: number; snapshots: PlatformUsageSnapshot[] };
@@ -1060,6 +1061,20 @@ export async function listPlatformOrganizations(token: string, query = '', page 
 export async function lookupPlatformUser(token: string, email: string): Promise<PlatformUserLookup | null> {
   const response = await request<{ data: PlatformUserLookup | null }>('/platform/users/lookup', {
     method: 'POST', body: JSON.stringify({ email: email.trim() }),
+  }, token);
+  return response.data;
+}
+
+export async function listPlatformModeratableContent(token: string, type: PlatformModeratableContent['type'], query = '', page = 1): Promise<{ items: PlatformModeratableContent[]; total: number; page: number; lastPage: number }> {
+  const search = new URLSearchParams({ type, page: String(page) });
+  if (query.trim()) search.set('q', query.trim());
+  const response = await request<{ data: PlatformModeratableContent[]; meta: { total: number; current_page: number; last_page: number } }>(`/platform/content-moderation?${search}`, {}, token);
+  return { items: response.data, total: response.meta.total, page: response.meta.current_page, lastPage: response.meta.last_page };
+}
+
+export async function updatePlatformContentModeration(token: string, type: PlatformModeratableContent['type'], id: string, status: PlatformModeratableContent['status'], reason = ''): Promise<PlatformModeratableContent> {
+  const response = await request<{ data: PlatformModeratableContent }>(`/platform/content-moderation/${type}/${encodeURIComponent(id)}`, {
+    method: 'PUT', body: JSON.stringify({ status, reason: reason.trim() || null }),
   }, token);
   return response.data;
 }

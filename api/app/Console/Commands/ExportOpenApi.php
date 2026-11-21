@@ -1069,6 +1069,20 @@ class ExportOpenApi extends Command
                     'PlatformUserLookupRequest' => ['type' => 'object', 'required' => ['email'], 'properties' => [
                         'email' => ['type' => 'string', 'format' => 'email', 'maxLength' => 254],
                     ]],
+                    'PlatformModeratableContentRecord' => ['type' => 'object', 'required' => ['type', 'id', 'title', 'organization_id', 'organization_name', 'status', 'reason', 'moderated_at'], 'properties' => [
+                        'type' => ['type' => 'string', 'enum' => ['course', 'educator']], 'id' => ['type' => 'string', 'format' => 'uuid'],
+                        'title' => ['type' => 'string'], 'organization_id' => ['type' => 'string', 'format' => 'uuid'],
+                        'organization_name' => ['type' => ['string', 'null']], 'status' => ['type' => 'string', 'enum' => ['hidden', 'visible']],
+                        'reason' => ['type' => ['string', 'null'], 'maxLength' => 500], 'moderated_at' => ['type' => ['string', 'null'], 'format' => 'date-time'],
+                    ]],
+                    'PlatformModeratableContentListResponse' => ['type' => 'object', 'required' => ['data', 'meta'], 'properties' => [
+                        'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PlatformModeratableContentRecord']],
+                        'meta' => ['$ref' => '#/components/schemas/PlatformPaginationMeta'],
+                    ]],
+                    'PlatformModerationResponse' => ['type' => 'object', 'required' => ['data'], 'properties' => ['data' => ['$ref' => '#/components/schemas/PlatformModeratableContentRecord']]],
+                    'UpdatePlatformModerationRequest' => ['type' => 'object', 'required' => ['status'], 'properties' => [
+                        'status' => ['type' => 'string', 'enum' => ['hidden', 'visible']], 'reason' => ['type' => ['string', 'null'], 'maxLength' => 500],
+                    ]],
                     'PlatformUsageCounts' => [
                         'type' => 'object', 'required' => ['organization_count', 'active_organization_count', 'suspended_organization_count', 'active_membership_count', 'active_student_count', 'active_course_count', 'active_subscription_count'],
                         'properties' => ['organization_count' => ['type' => 'integer', 'minimum' => 0], 'active_organization_count' => ['type' => 'integer', 'minimum' => 0], 'suspended_organization_count' => ['type' => 'integer', 'minimum' => 0], 'active_membership_count' => ['type' => 'integer', 'minimum' => 0], 'active_student_count' => ['type' => 'integer', 'minimum' => 0], 'active_course_count' => ['type' => 'integer', 'minimum' => 0], 'active_subscription_count' => ['type' => 'integer', 'minimum' => 0]],
@@ -2249,6 +2263,11 @@ class ExportOpenApi extends Command
                 ['name' => 'q', 'required' => false, 'description' => 'Search opted-in public educator names, titles, biographies, and organization names.', 'schema' => ['type' => 'string', 'maxLength' => 100]],
                 ['name' => 'page', 'required' => false, 'description' => 'One-based result page.', 'schema' => ['type' => 'integer', 'minimum' => 1]],
             ],
+            '/platform/content-moderation' => [
+                ['name' => 'type', 'required' => true, 'description' => 'Public listing type to review.', 'schema' => ['type' => 'string', 'enum' => ['course', 'educator']]],
+                ['name' => 'q', 'required' => false, 'description' => 'Search opted-in public listing titles, profiles, and workspace names.', 'schema' => ['type' => 'string', 'maxLength' => 100]],
+                ['name' => 'page', 'required' => false, 'description' => 'One-based result page.', 'schema' => ['type' => 'integer', 'minimum' => 1]],
+            ],
             '/organizations/{organizationId}/fee-invoices' => [
                 ['name' => 'page', 'required' => false, 'description' => 'One-based result page.', 'schema' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 1000000]],
                 ['name' => 'per_page', 'required' => false, 'description' => 'Page size (1–100; defaults to 50).', 'schema' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 100]],
@@ -2441,6 +2460,8 @@ class ExportOpenApi extends Command
             'api/v1/platform/organizations' => 'PlatformOrganizationsResponse',
             'api/v1/platform/audit-logs' => 'PlatformAuditLogsResponse',
             'api/v1/platform/users/lookup' => 'PlatformUserLookupResponse',
+            'api/v1/platform/content-moderation' => 'PlatformModeratableContentListResponse',
+            'api/v1/platform/content-moderation/{type}/{contentId}' => 'PlatformModerationResponse',
             'api/v1/platform/usage' => 'PlatformUsageResponse',
             'api/v1/platform/usage/history' => 'PlatformUsageHistoryResponse',
             'api/v1/platform/subscription-requests' => 'PendingSubscriptionRequestsResponse',
@@ -2607,6 +2628,7 @@ class ExportOpenApi extends Command
             'api/v1/organizations/{organizationId}/subscription/requests' => 'RequestSubscriptionChangeRequest',
             'api/v1/platform/organizations/{organizationId}/status' => 'UpdateOrganizationStatusRequest',
             'api/v1/platform/users/lookup' => 'PlatformUserLookupRequest',
+            'api/v1/platform/content-moderation/{type}/{contentId}' => 'UpdatePlatformModerationRequest',
             'api/v1/platform/feature-flags/{flag}' => 'SetPlatformFeatureFlagRequest',
             'api/v1/platform/plans' => 'CreateSubscriptionPlanRequest',
             'api/v1/platform/plans/{planId}' => 'UpdateSubscriptionPlanRequest',
