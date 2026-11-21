@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.278 — Localize assessment analytics and educator review
+- **Finding:** Educators could filter question accuracy, export grades, inspect submitted answers, and grade written responses, but those analytics and review controls were English-only.
+- **Fix:** Added English/Hindi translations for analytics filters, metrics, tables, attempt selection, correctness/pending states, learner answers, rubric scoring, feedback, CSV actions, and generic fallback errors. Existing server-side review permissions and grading data are unchanged.
+- **Verification:** Full Chromium suite passed (57 tests); the assessment-review axe scan also passes for Hindi at desktop and mobile widths. Vitest passed (12 tests); TypeScript and production build passed. No backend code changed.
+- **Limitations:** Active quiz-taking, status labels in assessment cards, and question-import UI remain partly English-only; API-provided validation messages are not translated.
+- **Next:** Localize the learner quiz-taking and assessment status lifecycle, then continue ERP/LMS and release-readiness work.
+
 ## Milestone 0.277 — Localize learner assessment feedback
 - **Finding:** Learners with results access could open submitted quiz answers and educator feedback, but the result panel remained English-only.
 - **Fix:** Added English/Hindi copy for attempt status, scores, answer labels, no-answer states, pending review, teacher feedback, load/refresh actions, and the panel's accessible name. Results remain gated by the existing server-derived `results.view` permission.

@@ -452,6 +452,7 @@ test('assessment answer review and rubric grading pass automated WCAG 2.2 AA che
   await page.addInitScript(() => {
     sessionStorage.setItem('paathnexus.session-token', 'accessibility-review-token');
     sessionStorage.setItem('paathnexus.active-organization', 'accessibility-assessment-review');
+    localStorage.setItem('paathnexus.locale', 'hi');
   });
   await page.route('**/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -473,11 +474,11 @@ test('assessment answer review and rubric grading pass automated WCAG 2.2 AA che
   });
 
   await page.goto('/');
-  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Courses', exact: true }).click();
+  await page.getByRole('navigation', { name: 'मुख्य नेविगेशन' }).getByRole('button', { name: 'कोर्स', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Writing and review' })).toBeVisible();
-  await page.getByRole('button', { name: 'Apply filters' }).click();
-  await expect(page.getByRole('heading', { name: 'Review submitted answers' })).toBeVisible();
-  await page.getByRole('button', { name: 'Review answers' }).click();
+  await page.getByRole('button', { name: 'फ़िल्टर लागू करें' }).click();
+  await expect(page.getByRole('heading', { name: 'जमा किए गए उत्तरों की समीक्षा करें' })).toBeVisible();
+  await page.getByRole('button', { name: 'उत्तर देखें' }).click();
   await expect(page.getByText('Scientific accuracy')).toBeVisible();
   for (const viewport of responsiveViewports) {
     await page.setViewportSize(viewport);

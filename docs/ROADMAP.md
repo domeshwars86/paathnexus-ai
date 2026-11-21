@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Sprint sequence
+Milestone 0.278 localizes assessment analytics and educator attempt review in English and Hindi, including filters, accuracy tables, learner answers, rubric grading, and grade exports. The 57-test Chromium suite, 12 Vitest tests, production build, and Hindi desktop/mobile accessibility scan pass. Next: localize active quiz-taking and assessment lifecycle/status messages.
 Milestone 0.277 localizes learner quiz-answer and educator-feedback results in English and Hindi. Result visibility still follows the server-derived permission; the full 57-test Chromium suite, 12 Vitest tests, and production build pass. Next: localize educator assessment analytics and attempt review.
 Milestone 0.276 localizes question authoring and timed quiz publishing in English and Hindi, including answer types, difficulty, rubrics, pool filters, randomized sampling, scheduling, and validation guidance. The full 57-test Chromium suite, 12 Vitest tests, and production build pass. Next: localize assessment review and results.
 Milestone 0.275 localizes course assignment authoring in English and Hindi, including points, workspace-timezone due-date guidance, allowed resource files, publish state, and fallback errors. The full 57-test Chromium suite, 12 Vitest tests, and production build pass. Next: localize assessment authoring and review forms.

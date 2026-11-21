@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useLocale } from './lib/locale';
 import { downloadAssessmentGrades, getAssessmentAnalytics, getAssessmentAttemptReview, gradeShortAnswer, listAssessmentAttempts, type AssessmentAnalytics, type AssessmentAnalyticsFilters, type AssessmentAttemptForReview, type AssessmentAttemptReview, type LearningAssessment } from './lib/auth';
 
 type Props = {
@@ -14,6 +15,7 @@ function ShortAnswerGrader({ token, organizationId, courseId, assessmentId, atte
   token: string; organizationId: string; courseId: string; assessmentId: string; attemptId: string;
   question: ReviewQuestion; onSaved: () => Promise<void>;
 }) {
+  const { t } = useLocale();
   const [points, setPoints] = useState(String(question.points_awarded));
   const [rubricScores, setRubricScores] = useState<Record<string, string>>(() => Object.fromEntries((question.rubric_scores ?? []).map((item) => [item.criterion_id, String(item.score)])));
   const [feedback, setFeedback] = useState(question.grader_feedback ?? '');
@@ -36,7 +38,7 @@ function ShortAnswerGrader({ token, organizationId, courseId, assessmentId, atte
       });
       await onSaved();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not save this grade.');
+      setError(cause instanceof Error ? cause.message : t('assessment.analytics.saveGradeError'));
     } finally {
       setSaving(false);
     }
@@ -46,14 +48,15 @@ function ShortAnswerGrader({ token, organizationId, courseId, assessmentId, atte
   const rubricPoints = rubric.reduce((sum, criterion) => sum + criterion.weight * Number(rubricScores[criterion.id] ?? 0), 0) / 10000 * question.points;
 
   return <form className="short-answer-grade-form" onSubmit={(event) => void submit(event)}>
-    {rubric.length ? <div className="rubric-grade-fields"><strong>Rubric score: {rubricPoints.toFixed(2)} / {question.points}</strong>{rubric.map((criterion) => <label key={criterion.id}>{criterion.label} · {criterion.weight}%<input aria-label={`${criterion.label}, score from zero to one hundred`} type="number" min="0" max="100" step="1" required value={rubricScores[criterion.id] ?? ''} onChange={(event) => setRubricScores((current) => ({ ...current, [criterion.id]: event.target.value }))} /></label>)}</div> : <label>Points awarded<input type="number" min="0" max={question.points} step="0.01" required value={points} onChange={(event) => setPoints(event.target.value)} /></label>}
-    <label>Feedback for learner<textarea maxLength={5000} value={feedback} onChange={(event) => setFeedback(event.target.value)} /></label>
+    {rubric.length ? <div className="rubric-grade-fields"><strong>{t('assessment.analytics.rubricScore')}: {rubricPoints.toFixed(2)} / {question.points}</strong>{rubric.map((criterion) => <label key={criterion.id}>{criterion.label} · {criterion.weight}%<input aria-label={`${criterion.label}, score from zero to one hundred`} type="number" min="0" max="100" step="1" required value={rubricScores[criterion.id] ?? ''} onChange={(event) => setRubricScores((current) => ({ ...current, [criterion.id]: event.target.value }))} /></label>)}</div> : <label>{t('assessment.analytics.pointsAwarded')}<input type="number" min="0" max={question.points} step="0.01" required value={points} onChange={(event) => setPoints(event.target.value)} /></label>}
+    <label>{t('assessment.analytics.feedback')}<textarea maxLength={5000} value={feedback} onChange={(event) => setFeedback(event.target.value)} /></label>
     {error && <small className="assessment-analytics-error" role="alert">{error}</small>}
-    <button type="submit" className="task-submit" disabled={saving || (rubric.length ? rubric.some((criterion) => rubricScores[criterion.id] === undefined || rubricScores[criterion.id] === '' || !Number.isFinite(Number(rubricScores[criterion.id])) || Number(rubricScores[criterion.id]) < 0 || Number(rubricScores[criterion.id]) > 100) : !Number.isFinite(Number(points)) || Number(points) < 0 || Number(points) > question.points)}>{saving ? 'Saving…' : 'Save grade'}</button>
+    <button type="submit" className="task-submit" disabled={saving || (rubric.length ? rubric.some((criterion) => rubricScores[criterion.id] === undefined || rubricScores[criterion.id] === '' || !Number.isFinite(Number(rubricScores[criterion.id])) || Number(rubricScores[criterion.id]) < 0 || Number(rubricScores[criterion.id]) > 100) : !Number.isFinite(Number(points)) || Number(points) < 0 || Number(points) > question.points)}>{saving ? t('assessment.loading') : t('assessment.analytics.saveGrade')}</button>
   </form>;
 }
 
 export function AssessmentAnalyticsPanel({ token, organizationId, courseId, assessments }: Props) {
+  const { t } = useLocale();
   const [assessmentId, setAssessmentId] = useState(assessments[0]?.id ?? '');
   const [analytics, setAnalytics] = useState<AssessmentAnalytics | null>(null);
   const [attempts, setAttempts] = useState<AssessmentAttemptForReview[]>([]);
@@ -75,7 +78,7 @@ export function AssessmentAnalyticsPanel({ token, organizationId, courseId, asse
   async function loadAnalytics() {
     if (!assessmentId) return;
     if (fromDate && toDate && fromDate > toDate) {
-      setError('The start date must not be after the end date.');
+      setError(t('assessment.analytics.invalidDateRange'));
       return;
     }
     setLoading(true);
@@ -94,7 +97,7 @@ export function AssessmentAnalyticsPanel({ token, organizationId, courseId, asse
       setAttemptId(submittedAttempts[0]?.id ?? '');
       setReview(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not load assessment analytics.');
+      setError(cause instanceof Error ? cause.message : t('assessment.analytics.loadError'));
       setAnalytics(null);
     } finally {
       setLoading(false);
@@ -108,7 +111,7 @@ export function AssessmentAnalyticsPanel({ token, organizationId, courseId, asse
     try {
       setReview(await getAssessmentAttemptReview(token, organizationId, courseId, assessmentId, attemptId));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not load the submitted answers.');
+      setError(cause instanceof Error ? cause.message : t('assessment.analytics.reviewLoadError'));
       setReview(null);
     } finally {
       setReviewLoading(false);
@@ -140,7 +143,7 @@ export function AssessmentAnalyticsPanel({ token, organizationId, courseId, asse
       link.click();
       URL.revokeObjectURL(url);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not export assessment grades.');
+      setError(cause instanceof Error ? cause.message : t('assessment.analytics.exportError'));
     } finally {
       setExporting(false);
     }
@@ -149,48 +152,48 @@ export function AssessmentAnalyticsPanel({ token, organizationId, courseId, asse
   return (
     <section className="assessment-analytics" aria-labelledby="assessment-analytics-title">
       <div className="assessment-analytics-heading">
-        <div><strong id="assessment-analytics-title">Assessment analytics</strong><small>Question accuracy uses only attempts that received each question.</small></div>
-        <label>Assessment<select value={assessmentId} onChange={(event) => { setAssessmentId(event.target.value); setAnalytics(null); setAttempts([]); setAttemptId(''); setReview(null); }}>
+        <div><strong id="assessment-analytics-title">{t('assessment.analytics.title')}</strong><small>{t('assessment.analytics.accuracyDescription')}</small></div>
+        <label>{t('assessment.analytics.assessment')}<select value={assessmentId} onChange={(event) => { setAssessmentId(event.target.value); setAnalytics(null); setAttempts([]); setAttemptId(''); setReview(null); }}>
           {assessments.map((assessment) => <option key={assessment.id} value={assessment.id}>{assessment.title}</option>)}
         </select></label>
       </div>
       <div className="assessment-analytics-filters">
-        <label>From date<input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} /></label>
-        <label>To date<input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} /></label>
-        <label>Student<select value={studentId} onChange={(event) => { setStudentId(event.target.value); setReview(null); }}><option value="">All assigned learners</option>{Array.from(new Map(availableStudents.filter((attempt) => attempt.student_id).map((attempt) => [attempt.student_id, attempt])).values()).map((attempt) => <option key={attempt.student_id} value={attempt.student_id ?? ''}>{attempt.student_name ?? 'Learner'}{attempt.student_code ? ` · ${attempt.student_code}` : ''}</option>)}</select></label>
-        <button type="button" className="task-submit" disabled={loading || !assessmentId || Boolean(fromDate && toDate && fromDate > toDate)} onClick={() => void loadAnalytics()}>{loading ? 'Loading…' : 'Apply filters'}</button>
-        <button type="button" className="task-submit" disabled={exporting || !assessmentId || Boolean(fromDate && toDate && fromDate > toDate)} onClick={() => void exportGrades()}>{exporting ? 'Exporting…' : 'Export grades CSV'}</button>
+        <label>{t('assessment.analytics.fromDate')}<input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} /></label>
+        <label>{t('assessment.analytics.toDate')}<input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} /></label>
+        <label>{t('assessment.analytics.student')}<select value={studentId} onChange={(event) => { setStudentId(event.target.value); setReview(null); }}><option value="">{t('assessment.analytics.allLearners')}</option>{Array.from(new Map(availableStudents.filter((attempt) => attempt.student_id).map((attempt) => [attempt.student_id, attempt])).values()).map((attempt) => <option key={attempt.student_id} value={attempt.student_id ?? ''}>{attempt.student_name ?? t('assessment.analytics.learner')}{attempt.student_code ? ` · ${attempt.student_code}` : ''}</option>)}</select></label>
+        <button type="button" className="task-submit" disabled={loading || !assessmentId || Boolean(fromDate && toDate && fromDate > toDate)} onClick={() => void loadAnalytics()}>{loading ? t('assessment.loading') : t('assessment.analytics.applyFilters')}</button>
+        <button type="button" className="task-submit" disabled={exporting || !assessmentId || Boolean(fromDate && toDate && fromDate > toDate)} onClick={() => void exportGrades()}>{exporting ? t('assessment.analytics.exporting') : t('assessment.analytics.exportGrades')}</button>
       </div>
       {error && <p className="assessment-analytics-error" role="alert">{error}</p>}
       {analytics && <>
         <div className="assessment-analytics-metrics">
-          <article><span>Attempts</span><strong>{analytics.attempt_count}</strong><small>{analytics.completed_attempt_count} submitted or expired</small></article>
-          <article><span>Average score</span><strong>{analytics.average_score_percent === null ? '—' : `${analytics.average_score_percent}%`}</strong><small>Of sampled maximum points</small></article>
-          <article><span>Question pool</span><strong>{analytics.question_pool_count}</strong><small>{analytics.randomized_question_count ? `${analytics.randomized_question_count} per attempt` : 'Full pool per attempt'}</small></article>
+          <article><span>{t('assessment.analytics.attempts')}</span><strong>{analytics.attempt_count}</strong><small>{analytics.completed_attempt_count} {t('assessment.analytics.completed')}</small></article>
+          <article><span>{t('assessment.analytics.averageScore')}</span><strong>{analytics.average_score_percent === null ? '—' : `${analytics.average_score_percent}%`}</strong><small>{t('assessment.analytics.sampledPoints')}</small></article>
+          <article><span>{t('assessment.analytics.questionPool')}</span><strong>{analytics.question_pool_count}</strong><small>{analytics.randomized_question_count ? `${analytics.randomized_question_count} ${t('assessment.analytics.perAttempt')}` : t('assessment.analytics.fullPool')}</small></article>
         </div>
-        <div className="assessment-analytics-table-wrap" role="region" aria-label="Question accuracy results" tabIndex={0}><table className="assessment-analytics-table">
-          <thead><tr><th>Question</th><th>Points</th><th>Presented</th><th>Correct</th><th>Accuracy</th></tr></thead>
+        <div className="assessment-analytics-table-wrap" role="region" aria-label={t('assessment.analytics.questionAccuracy')} tabIndex={0}><table className="assessment-analytics-table">
+          <thead><tr><th>{t('assessment.question')}</th><th>{t('assessment.points')}</th><th>{t('assessment.analytics.presented')}</th><th>{t('assessment.analytics.correct')}</th><th>{t('assessment.analytics.accuracy')}</th></tr></thead>
           <tbody>{analytics.question_analytics.map((question) => <tr key={question.question_id}>
             <td>{question.prompt}</td><td>{question.points}</td><td>{question.attempts_presented}</td><td>{question.correct_count}</td>
             <td>{question.accuracy_percent === null ? '—' : `${question.accuracy_percent}%`}</td>
           </tr>)}</tbody>
         </table></div>
         <div className="assessment-review">
-          <h3>Review submitted answers</h3>
+          <h3>{t('assessment.analytics.reviewAnswers')}</h3>
           {attempts.length ? <div className="assessment-review-controls">
-            <label>Learner attempt<select value={attemptId} onChange={(event) => { setAttemptId(event.target.value); setReview(null); }}>
-              {attempts.map((attempt) => <option key={attempt.id} value={attempt.id}>{attempt.student_name ?? 'Learner'}{attempt.student_code ? ` · ${attempt.student_code}` : ''} · Attempt {attempt.attempt_number} · {attempt.score ?? 0}/{attempt.max_points}</option>)}
+            <label>{t('assessment.analytics.learnerAttempt')}<select value={attemptId} onChange={(event) => { setAttemptId(event.target.value); setReview(null); }}>
+              {attempts.map((attempt) => <option key={attempt.id} value={attempt.id}>{attempt.student_name ?? t('assessment.analytics.learner')}{attempt.student_code ? ` · ${attempt.student_code}` : ''} · {t('assessment.attemptNumber').replace('{number}', String(attempt.attempt_number))} · {attempt.score ?? 0}/{attempt.max_points}</option>)}
             </select></label>
-            <button type="button" className="task-submit" disabled={reviewLoading || !attemptId} onClick={() => void loadReview()}>{reviewLoading ? 'Loading…' : 'Review answers'}</button>
-          </div> : <p className="assessment-review-empty">No submitted attempts are available to review yet.</p>}
+            <button type="button" className="task-submit" disabled={reviewLoading || !attemptId} onClick={() => void loadReview()}>{reviewLoading ? t('assessment.loading') : t('assessment.analytics.reviewButton')}</button>
+          </div> : <p className="assessment-review-empty">{t('assessment.analytics.noAttempts')}</p>}
           {review && <div className="assessment-review-detail">
-            <p><strong>{review.attempt.student_name ?? 'Learner'}</strong>{review.attempt.student_code ? ` · ${review.attempt.student_code}` : ''} · Score {review.attempt.score ?? 0}/{review.attempt.max_points}</p>
+            <p><strong>{review.attempt.student_name ?? t('assessment.analytics.learner')}</strong>{review.attempt.student_code ? ` · ${review.attempt.student_code}` : ''} · {t('assessment.analytics.score')} {review.attempt.score ?? 0}/{review.attempt.max_points}</p>
             {review.questions.map((question, index) => <article className="assessment-review-question" key={question.question_id}>
-              <div><strong>{index + 1}. {question.prompt}</strong><span className={question.is_correct === true ? 'is-correct' : question.is_correct === false ? 'is-incorrect' : ''}>{question.is_correct === true ? 'Correct' : question.is_correct === false ? 'Incorrect' : 'Pending review'}</span></div>
-              <small>Learner answer: {question.type === 'short_answer' ? question.response_text || 'No response' : question.selected_options.map((option) => option.text).join(', ') || 'No answer'}</small>
-              {question.type !== 'short_answer' && <small>Correct answer: {question.correct_options.map((option) => option.text).join(', ') || 'Not applicable'}</small>}
-              <small>Points: {question.points_awarded}/{question.points}</small>
-              {question.grader_feedback && <small>Feedback: {question.grader_feedback}</small>}
+              <div><strong>{index + 1}. {question.prompt}</strong><span className={question.is_correct === true ? 'is-correct' : question.is_correct === false ? 'is-incorrect' : ''}>{question.is_correct === true ? t('assessment.analytics.correct') : question.is_correct === false ? t('assessment.analytics.incorrect') : t('assessment.analytics.pendingReview')}</span></div>
+              <small>{t('assessment.analytics.learnerAnswer')} {question.type === 'short_answer' ? question.response_text || t('assessment.noResponse') : question.selected_options.map((option) => option.text).join(', ') || t('assessment.noAnswer')}</small>
+              {question.type !== 'short_answer' && <small>{t('assessment.analytics.correctAnswer')} {question.correct_options.map((option) => option.text).join(', ') || t('assessment.analytics.notApplicable')}</small>}
+              <small>{t('assessment.points')}: {question.points_awarded}/{question.points}</small>
+              {question.grader_feedback && <small>{t('assessment.analytics.feedbackSummary')} {question.grader_feedback}</small>}
               {question.type === 'short_answer' && <ShortAnswerGrader key={`${question.question_id}-${question.graded_at ?? 'pending'}`} token={token} organizationId={organizationId} courseId={courseId} assessmentId={assessmentId} attemptId={review.attempt.id} question={question} onSaved={refreshAfterGrade} />}
             </article>)}
           </div>}
