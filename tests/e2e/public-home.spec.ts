@@ -722,6 +722,43 @@ test('guardian-link management controls follow the saved Hindi locale', async ({
   await expect(panel.getByText('कोई सक्रिय अभिभावक लिंक नहीं है। ज़रूरत हो तो पहले अभिभावक सदस्य जोड़ें।')).toBeVisible();
 });
 
+test('course creation form follows the Hindi locale and preserves its API values', async ({ page }) => {
+  const organizationId = 'course-create-locale-workspace';
+  let createdCourse: Record<string, unknown> | null = null;
+  await page.addInitScript(() => {
+    localStorage.setItem('paathnexus.locale', 'hi');
+    sessionStorage.setItem('paathnexus.session-token', 'course-create-locale-token');
+    sessionStorage.setItem('paathnexus.active-organization', 'course-create-locale-workspace');
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const method = route.request().method();
+    const send = (data: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data }) });
+    if (path.endsWith('/auth/me')) return send({
+      user: { name: 'Asha Educator', email: 'asha@example.test' },
+      organizations: [{ id: organizationId, name: 'Hindi Academy', slug: 'hindi-academy', type: 'school', role: 'educator', permissions: ['workspace.view', 'courses.view', 'courses.manage', 'academic.manage'], locale: 'hi', timezone: 'Asia/Kolkata' }],
+    });
+    if (path.endsWith('/dashboard')) return send({ active_students_count: 0, active_classes_count: 0, active_enrollments_count: 0, unassigned_students_count: 0, pending_tasks_count: 0, latest_attendance_rate: null, latest_attendance_class: null, latest_attendance_date: null, attendance_series: [], classes: [], today_schedule: [], schedule_notice: null, schedule_weekday: 4 });
+    if (path.endsWith('/courses') && method === 'POST') {
+      createdCourse = route.request().postDataJSON() as Record<string, unknown>;
+      return send({ id: 'course-locale-1', code: createdCourse.code, title: createdCourse.title, description: createdCourse.description, status: 'active', is_public: false, price_paise: createdCourse.price_paise, academic_year_id: null, academic_year: null, subject_id: null, subject: null, instructors: [], lessons_count: 0, enrollments_count: 0 });
+    }
+    if (path.endsWith('/courses') && method === 'GET') return send(createdCourse ? [{ id: 'course-locale-1', code: createdCourse.code, title: createdCourse.title, description: createdCourse.description, status: 'active', is_public: false, price_paise: createdCourse.price_paise, academic_year_id: null, academic_year: null, subject_id: null, subject: null, instructors: [], lessons_count: 0, enrollments_count: 0 }] : []);
+    return send([]);
+  });
+
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'मुख्य नेविगेशन' }).getByRole('button', { name: 'कोर्स', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'कोर्स और पाठ' })).toBeVisible();
+  await page.getByLabel('कोर्स का शीर्षक').fill('जीव विज्ञान की नींव');
+  await page.getByLabel('कोर्स कोड').fill('BIO-101');
+  await page.getByLabel('विवरण', { exact: true }).fill('जीवन विज्ञान की मूल बातें');
+  await page.getByLabel('कोर्स शुल्क (INR)').fill('125.50');
+  await page.getByRole('button', { name: 'कोर्स बनाएँ' }).click();
+  await expect.poll(() => createdCourse).toMatchObject({ code: 'BIO-101', title: 'जीव विज्ञान की नींव', description: 'जीवन विज्ञान की मूल बातें', price_paise: 12550 });
+  await expect(page.getByText('जीव विज्ञान की नींव', { exact: true }).first()).toBeVisible();
+});
+
 test('workspace managers can configure narrowed admin and educator profiles', async ({ page }) => {
   const organizationId = 'custom-manager-roles-workspace';
   await page.setViewportSize({ width: 1280, height: 1000 });

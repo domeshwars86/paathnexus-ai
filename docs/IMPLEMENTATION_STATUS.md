@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.272 — Localize course creation
+- **Finding:** The course library supported English and Hindi, but the create-course form and its API fallback error stayed in English.
+- **Fix:** Localized the course creation heading, labels, description, price hint, submit/saving states, and fallback error in English and Hindi. Course values and the API payload are unchanged.
+- **Verification:** Full Chromium suite passed (57 tests), including a Hindi course creation flow that checks the title, code, description, and INR-to-paise conversion. Vitest passed (12 tests), and the TypeScript/production build passed. The focused Laravel email-verification suite passed (3 tests, 12 assertions); local configuration reports verification disabled.
+- **Limitations:** Other course editing, lesson, assignment, and assessment authoring forms still need localization. The local demo database contains synthetic accounts; the user's earlier account is not present.
+- **Next:** Continue English/Hindi localization across remaining course and assessment authoring forms, then continue ERP/LMS and release-readiness work.
+
 ## Milestone 0.271 — Localize guardian-link management
 - **Finding:** Managers could link active guardian accounts to student summaries, but that form and its active-link controls remained English-only while the rest of the family portal supported English and Hindi.
 - **Fix:** Added shared English/Hindi translations for the guardian-link form, relationship choices, eligibility hint, loading/empty states, end-access action, and generic fallback errors. Existing permission checks and API payloads are unchanged.
