@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.277 — Localize learner assessment feedback
+- **Finding:** Learners with results access could open submitted quiz answers and educator feedback, but the result panel remained English-only.
+- **Fix:** Added English/Hindi copy for attempt status, scores, answer labels, no-answer states, pending review, teacher feedback, load/refresh actions, and the panel's accessible name. Results remain gated by the existing server-derived `results.view` permission.
+- **Verification:** Full Chromium suite passed (57 tests), including a Hindi quiz attempt that opens and verifies its answer and feedback. Vitest passed (12 tests); TypeScript and production build passed. No backend code changed.
+- **Limitations:** Educator analytics and attempt-review interfaces, the active quiz-taking flow, and question-import copy still contain untranslated text.
+- **Next:** Localize assessment analytics and educator review, then address remaining workspace error states and ERP/LMS release-readiness work.
+
 ## Milestone 0.276 — Localize quiz and question authoring
 - **Finding:** Assessment managers could create questions and publish timed quizzes, but the question bank, scheduling, randomization, and short-answer rubric controls remained English-only.
 - **Fix:** Added English/Hindi translations for question types, difficulty, answer options, rubric criteria and weights, question-bank filters, quiz scheduling, randomization, sampling guidance, and validation/fallback errors. Correct-answer privacy and assessment API data are unchanged.

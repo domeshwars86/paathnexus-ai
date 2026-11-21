@@ -948,7 +948,7 @@ test('learner can complete a lesson and submit a quiz using isolated API fixture
     if (path.endsWith('/auth/me')) {
       return send({
         user: { name: 'Asha Learner', email: 'asha@example.test' },
-        organizations: [{ id: organizationId, name: 'Fixture Academy', slug: 'fixture-academy', type: 'school', role: 'student', permissions: ['workspace.view', 'courses.view', 'assessments.take'], locale: 'en', timezone: 'Asia/Kolkata' }],
+        organizations: [{ id: organizationId, name: 'Fixture Academy', slug: 'fixture-academy', type: 'school', role: 'student', permissions: ['workspace.view', 'courses.view', 'assessments.take', 'results.view'], locale: 'en', timezone: 'Asia/Kolkata' }],
       });
     }
     if (path.endsWith('/student/dashboard')) {
@@ -983,6 +983,9 @@ test('learner can complete a lesson and submit a quiz using isolated API fixture
       quizSubmitted = true;
       return send({ id: attemptId, attempt_number: 1, status: 'submitted', review_status: 'not_required', score: 1, max_points: 1, started_at: '2026-11-19T09:00:00Z', expires_at: null, submitted_at: '2026-11-19T09:01:00Z' });
     }
+    if (path.endsWith(`/assessments/${assessmentId}/attempts/${attemptId}/result`)) {
+      return send({ attempt: { id: attemptId, attempt_number: 1, status: 'submitted', review_status: 'not_required', score: 1, max_points: 1, started_at: '2026-11-19T09:00:00Z', expires_at: null, submitted_at: '2026-11-19T09:01:00Z' }, answers: [{ question_id: 'question-fixture', prompt: 'What is the basic unit of life?', type: 'single_choice', points: 1, points_awarded: 1, response_text: null, selected_options: [{ id: 'option-correct', text: 'The cell' }], grader_feedback: 'Correct answer.', pending_review: false }] });
+    }
     return send([]);
   });
 
@@ -1010,6 +1013,12 @@ test('learner can complete a lesson and submit a quiz using isolated API fixture
   await page.getByRole('button', { name: 'Submit quiz' }).click();
   await expect.poll(() => quizSubmitted).toBe(true);
   await expect(page.getByText('Attempt 1: 1 / 1 points')).toBeVisible();
+  await page.getByRole('button', { name: 'हिन्दी' }).click();
+  await expect(page.getByRole('heading', { name: 'मेरे उत्तर और प्रतिक्रिया' })).toBeVisible();
+  await page.getByRole('button', { name: 'उत्तर और प्रतिक्रिया देखें' }).click();
+  await expect(page.getByText('आपका उत्तर: The cell')).toBeVisible();
+  await expect(page.getByText('शिक्षक की प्रतिक्रिया: Correct answer.')).toBeVisible();
+  await page.getByRole('button', { name: 'English' }).click();
   await page.getByRole('navigation', { name: 'Tools' }).getByRole('button', { name: /AI learning/ }).click();
   await expect(page.getByRole('heading', { name: 'Ask your learning tutor' })).toBeVisible();
   expect(bankQuestionRequested).toBe(false);
