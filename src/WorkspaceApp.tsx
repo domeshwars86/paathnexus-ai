@@ -2043,7 +2043,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
     try {
       const updated = await updateCourseInstructors(token, organization.id, selectedCourseId, courseInstructorIds);
       setCourses((items) => items.map((item) => item.id === updated.id ? updated : item));
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not update course instructors.'); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t('courseForm.updateInstructorsError')); }
     finally { setSaving(false); }
   }
 
@@ -2061,7 +2061,7 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
     event.preventDefault(); if (!selectedCourseId || !enrollStudentId) return;
     setSaving(true); setError('');
     try { await enrollInCourse(token, organization.id, selectedCourseId, enrollStudentId); setEnrollStudentId(''); await refreshDetails(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not enroll learner.'); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : t('courseForm.enrollError')); }
     finally { setSaving(false); }
   }
 
@@ -2245,7 +2245,12 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
         <button className="task-submit" disabled={saving || !courseEditTitle.trim()}>{saving ? t('courseForm.saving') : t('courseForm.save')}</button>
         <small className="form-hint">{t('courseForm.draftNote')}</small>
       </form>}
-      {canManageAcademic && selectedCourse && <form className="academic-form course-edit-form" onSubmit={(event) => void submitInstructorAssignment(event)}><strong>Course instructors</strong><label>Assigned teachers<select multiple size={Math.min(5, Math.max(2, instructorCandidates.length))} value={courseInstructorIds.map(String)} onChange={(event) => setCourseInstructorIds(Array.from(event.currentTarget.selectedOptions, (option) => Number(option.value)))}>{instructorCandidates.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select></label><button className="task-submit" disabled={saving}>{saving ? 'Saving…' : 'Save instructor assignments'}</button><small className="form-hint">Teachers assigned here can manage this course and its enrolled learners. Hold Ctrl or Command to select more than one teacher.</small></form>}
+      {canManageAcademic && selectedCourse && <form className="academic-form course-edit-form" onSubmit={(event) => void submitInstructorAssignment(event)}>
+        <strong>{t('courseForm.instructors')}</strong>
+        <label>{t('courseForm.assignedTeachers')}<select multiple size={Math.min(5, Math.max(2, instructorCandidates.length))} value={courseInstructorIds.map(String)} onChange={(event) => setCourseInstructorIds(Array.from(event.currentTarget.selectedOptions, (option) => Number(option.value)))}>{instructorCandidates.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select></label>
+        <button className="task-submit" disabled={saving}>{saving ? t('courseForm.saving') : t('courseForm.saveInstructors')}</button>
+        <small className="form-hint">{t('courseForm.instructorHint')}</small>
+      </form>}
       {canManageCourses && <div className="academic-forms learning-forms course-actions"><form className="academic-form" onSubmit={(event) => void submitLesson(event)}>
         <strong>{t('courseForm.addLesson')}</strong>
         <label>{t('courseForm.lessonTitle')}<input required maxLength={180} value={lessonTitle} onChange={(event) => setLessonTitle(event.target.value)} /></label>
@@ -2253,7 +2258,12 @@ function CoursesPanel({ token, organization }: { token: string; organization: Or
         <label>{t('courseForm.resource')}<select value={lessonResourceType} onChange={(event) => setLessonResourceType(event.target.value as '' | 'video' | 'document')}><option value="">{t('courseForm.noResource')}</option><option value="video">{t('courseForm.video')}</option><option value="document">{t('courseForm.document')}</option></select></label>
         {lessonResourceType && <label>{t('courseForm.secureResource')}<input type="url" required pattern="https://.*" value={lessonResourceUrl} onChange={(event) => setLessonResourceUrl(event.target.value)} placeholder="https://…" /></label>}
         <button className="task-submit" disabled={saving || !lessonTitle.trim()}>{saving ? t('courseForm.saving') : t('courseForm.addLesson')}</button>
-      </form><form className="academic-form" onSubmit={(event) => void submitEnrollment(event)}><strong>Enroll learner</strong><label>Student<select required value={enrollStudentId} onChange={(event) => setEnrollStudentId(event.target.value)}><option value="">Choose a learner…</option>{students.map((student) => <option key={student.id} value={student.id}>{student.name} · {student.student_code}</option>)}</select></label><button className="task-submit" disabled={saving || !enrollStudentId}>{saving ? 'Saving…' : 'Enroll'}</button><small className="form-hint">{enrollments.length} learners enrolled.</small></form></div>}
+      </form><form className="academic-form" onSubmit={(event) => void submitEnrollment(event)}>
+        <strong>{t('courseForm.enrollLearner')}</strong>
+        <label>{t('courseForm.student')}<select required value={enrollStudentId} onChange={(event) => setEnrollStudentId(event.target.value)}><option value="">{t('courseForm.chooseLearner')}</option>{students.map((student) => <option key={student.id} value={student.id}>{student.name} · {student.student_code}</option>)}</select></label>
+        <button className="task-submit" disabled={saving || !enrollStudentId}>{saving ? t('courseForm.saving') : t('courseForm.enroll')}</button>
+        <small className="form-hint">{t('courseForm.enrolledCount').replace('{count}', String(enrollments.length))}</small>
+      </form></div>}
       <div className="course-lesson-list">{lessons.length ? lessons.map((lesson) => <article className={`course-lesson ${lesson.status === 'archived' ? 'course-lesson-archived' : ''}`} key={lesson.id}><div className="course-lesson-number">{lesson.position.toString().padStart(2, '0')}</div><div className="course-lesson-copy"><strong>{lesson.title}{lesson.status === 'archived' && <span className="lesson-archived-label"> · archived</span>}</strong>{lesson.content && <p>{lesson.content}</p>}{lesson.resource_url && <a className="lesson-resource-link" href={lesson.resource_url} target="_blank" rel="noreferrer">Open {lesson.resource_type === 'video' ? 'video' : 'document'} resource</a>}{!canManageCourses && lesson.prerequisites.length > 0 && <small>Complete first: {lesson.prerequisites.map((item) => item.title).join(', ')}</small>}{!canManageCourses && <small>Status: {lesson.my_progress?.replace('_', ' ') ?? 'not started'}</small>}{canManageCourses && editingLessonId === lesson.id && <form className="academic-form lesson-edit-form" onSubmit={(event) => void submitLessonEdit(event)}>
         <label>{t('courseForm.lessonTitle')}<input required maxLength={180} value={lessonEditTitle} onChange={(event) => setLessonEditTitle(event.target.value)} /></label>
         <label>{t('courseForm.lessonContent')}<textarea maxLength={20000} value={lessonEditContent} onChange={(event) => setLessonEditContent(event.target.value)} /></label>

@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.274 — Localize instructor assignment and enrollment
+- **Finding:** Course instructors and learner enrollment were manageable from the course library but their controls and empty-state count remained English-only.
+- **Fix:** Added English/Hindi copy for instructor assignments, multi-select guidance, enrollment fields and actions, live enrollment counts, and generic fallback errors. Server authorization and request data are unchanged.
+- **Verification:** Full Chromium suite passed (57 tests), including Hindi instructor assignment and enrollment form checks; Vitest passed (12 tests); TypeScript and production build passed. No backend code changed.
+- **Limitations:** Assignment and assessment authoring forms and much of the remaining workspace content are not fully localized.
+- **Next:** Localize assignment and assessment authoring forms, then continue the remaining ERP/LMS and release-readiness backlog.
+
 ## Milestone 0.273 — Localize course and lesson authoring
 - **Finding:** Course editing and lesson creation/editing still rendered English-only labels, visibility options, helper text, and fallback errors in Hindi workspaces.
 - **Fix:** Added English/Hindi translations for course edit visibility and catalog settings, lesson creation and editing fields, resource types, prerequisite and availability controls, save/cancel states, and fallback errors. API payloads and authorization are unchanged.
