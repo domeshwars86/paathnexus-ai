@@ -1617,6 +1617,21 @@ test('educator can create a course and add its first lesson', async ({ page }) =
   await expect.poll(() => lessonCreated).toBe(true);
   await expect(page.getByText('Observe a local ecosystem', { exact: true })).toBeVisible();
 
+  await page.getByRole('button', { name: 'हिन्दी' }).click();
+  await expect(page.getByRole('heading', { name: 'कोर्स और पाठ' })).toBeVisible();
+  const courseEditForm = page.locator('.course-edit-form').first();
+  await expect(courseEditForm.getByText('कोर्स संपादित करें')).toBeVisible();
+  await expect(courseEditForm.getByLabel('प्रकाशन स्थिति')).toBeVisible();
+  await expect(courseEditForm.getByLabel('कोर्स खोज')).toBeVisible();
+  await expect(page.getByLabel('पाठ का शीर्षक').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'पाठ जोड़ें' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Edit lesson' }).click();
+  const lessonEditForm = page.locator('.lesson-edit-form');
+  await expect(lessonEditForm.getByLabel('पहले पूरे किए जाने वाले पाठ')).toBeVisible();
+  await expect(lessonEditForm.getByRole('button', { name: 'पाठ सहेजें' })).toBeVisible();
+  await lessonEditForm.getByRole('button', { name: 'रद्द करें' }).click();
+  await page.getByRole('button', { name: 'English' }).click();
+
   await page.getByRole('navigation', { name: 'Tools' }).getByRole('button', { name: /AI learning/ }).click();
   await expect(page.getByRole('heading', { name: 'Prepare a teaching draft' })).toBeVisible();
   await page.getByLabel('Topic', { exact: true }).fill('Cell ecosystems');

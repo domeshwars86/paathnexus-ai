@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.273 — Localize course and lesson authoring
+- **Finding:** Course editing and lesson creation/editing still rendered English-only labels, visibility options, helper text, and fallback errors in Hindi workspaces.
+- **Fix:** Added English/Hindi translations for course edit visibility and catalog settings, lesson creation and editing fields, resource types, prerequisite and availability controls, save/cancel states, and fallback errors. API payloads and authorization are unchanged.
+- **Verification:** Full Chromium suite passed (57 tests), including Hindi course and lesson authoring assertions; Vitest passed (12 tests); TypeScript and production build passed. The focused browser journey passed independently. No backend code changed.
+- **Limitations:** Course instructor assignment, learner enrollment, assignment authoring, and assessment authoring still have English-only content. Other authored content and API validation messages also remain untranslated.
+- **Next:** Localize course instructor and enrollment forms, then assignment and assessment authoring; continue ERP/LMS and release-readiness work.
+
 ## Milestone 0.272 — Localize course creation
 - **Finding:** The course library supported English and Hindi, but the create-course form and its API fallback error stayed in English.
 - **Fix:** Localized the course creation heading, labels, description, price hint, submit/saving states, and fallback error in English and Hindi. Course values and the API payload are unchanged.
