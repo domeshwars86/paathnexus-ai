@@ -2,6 +2,12 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.257 — Enforce teacher profile limits atomically
+- **Finding:** Teacher profile count and `max_teachers` entitlement were checked before insert without workspace serialization, allowing concurrent requests to exceed the plan cap.
+- **Fix:** Teacher profile creation now locks the active workspace, recounts active profiles, checks the current entitlement, and inserts inside one transaction.
+- **Verification:** Focused entitlement test passed (1 test, 15 assertions); full Laravel suite passed (121 tests, 2,646 assertions); PHP lint and `git diff --check` passed. PostgreSQL concurrency remains a CI verification item.
+- **Next:** Continue API-scope and release-readiness audits.
+
 ## Milestone 0.256 — Enforce course limits atomically
 - **Finding:** Course count and `max_courses` entitlement were checked before course creation without workspace serialization, allowing concurrent requests to exceed the plan cap.
 - **Fix:** Course creation now locks the active workspace, recounts active/draft courses, checks the current entitlement, revalidates optional academic-year/subject scope, and inserts in one transaction.

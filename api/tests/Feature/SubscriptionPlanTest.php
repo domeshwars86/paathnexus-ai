@@ -49,7 +49,7 @@ class SubscriptionPlanTest extends TestCase
         $owner = User::factory()->create();
         $organization->users()->attach($owner, ['role' => 'owner', 'status' => 'active', 'joined_at' => now()]);
         $freePlan = SubscriptionPlan::where('code', 'free')->firstOrFail();
-        $freePlan->forceFill(['entitlements' => ['max_students' => 1, 'max_courses' => 1]])->save();
+        $freePlan->forceFill(['entitlements' => ['max_students' => 1, 'max_courses' => 1, 'max_teachers' => 1]])->save();
         $this->assertSame(1, $freePlan->fresh()->entitlements['max_students']);
         OrganizationSubscription::create(['organization_id' => $organization->id, 'plan_id' => $freePlan->id, 'status' => 'active']);
         $this->assertSame(1, OrganizationSubscription::with('plan')->where('organization_id', $organization->id)->firstOrFail()->plan->entitlements['max_students']);
@@ -62,8 +62,13 @@ class SubscriptionPlanTest extends TestCase
         $this->actingAs($owner, 'sanctum')->postJson('/api/v1/organizations/'.$organization->id.'/courses', ['code' => 'C-1', 'title' => 'First Course'])->assertCreated();
         $this->actingAs($owner, 'sanctum')->postJson('/api/v1/organizations/'.$organization->id.'/courses', ['code' => 'C-2', 'title' => 'Second Course'])
             ->assertUnprocessable()->assertJsonFragment(['message' => 'The workspace has reached its current plan limit. Contact your workspace owner to review the plan.']);
+        $this->actingAs($owner, 'sanctum')->postJson('/api/v1/organizations/'.$organization->id.'/teachers', ['employee_code' => 'T-1', 'name' => 'First Teacher'])
+            ->assertCreated();
+        $this->actingAs($owner, 'sanctum')->postJson('/api/v1/organizations/'.$organization->id.'/teachers', ['employee_code' => 'T-2', 'name' => 'Second Teacher'])
+            ->assertUnprocessable()->assertJsonFragment(['message' => 'The workspace has reached its current plan limit. Contact your workspace owner to review the plan.']);
         $this->assertDatabaseCount('student_profiles', 1);
         $this->assertDatabaseCount('courses', 1);
+        $this->assertDatabaseCount('teacher_profiles', 1);
     }
 
     public function test_plan_ai_daily_limit_is_applied_before_provider_use(): void

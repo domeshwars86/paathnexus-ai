@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Sprint sequence
+Milestone 0.257 checks the teacher profile plan cap under a workspace lock before insert. Focused entitlement and full Laravel suites pass (121 tests, 2,646 assertions); PostgreSQL concurrency verification remains pending.
 Milestone 0.256 checks the course plan cap and optional academic scope under a workspace lock before insert. Focused entitlement and full Laravel suites pass (121 tests, 2,642 assertions); PostgreSQL concurrency verification remains pending.
 Milestone 0.255 checks the student plan cap under a workspace lock before profile creation. Focused entitlement and full Laravel suites pass (121 tests, 2,642 assertions); PostgreSQL concurrency verification remains pending.
 Milestone 0.254 serializes active academic-year changes and timetable overlap validation across writes. Focused scheduling and full Laravel suites pass (121 tests, 2,642 assertions); PostgreSQL concurrency verification remains pending.

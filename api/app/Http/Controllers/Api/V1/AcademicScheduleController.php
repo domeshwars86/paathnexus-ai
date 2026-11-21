@@ -161,13 +161,21 @@ class AcademicScheduleController extends Controller
     {
         $organization = $this->memberOrganization($request, $organizationId);
         abort_unless($request->user()->can('manageAcademic', $organization), 403);
-        $entitlements->assertBelowLimit($organization, 'max_teachers', $organization->teacherProfiles()->where('status', 'active')->count());
-
         $validated = $request->validate([
             'employee_code' => ['required', 'string', 'max:64', Rule::unique('teacher_profiles', 'employee_code')->where('organization_id', $organization->id)],
             'name' => ['required', 'string', 'max:160'],
         ]);
-        $teacher = $organization->teacherProfiles()->create($validated);
+        $teacher = DB::transaction(function () use ($organization, $entitlements, $validated): TeacherProfile {
+            $lockedOrganization = Organization::query()->whereKey($organization->id)
+                ->where('status', 'active')->lockForUpdate()->firstOrFail();
+            $entitlements->assertBelowLimit(
+                $lockedOrganization,
+                'max_teachers',
+                $lockedOrganization->teacherProfiles()->where('status', 'active')->count(),
+            );
+
+            return $lockedOrganization->teacherProfiles()->create($validated);
+        });
 
         return response()->json(['data' => $this->teacherData($teacher)], 201);
     }
