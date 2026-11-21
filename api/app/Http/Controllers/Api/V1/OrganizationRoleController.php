@@ -64,13 +64,14 @@ class OrganizationRoleController extends Controller
     {
         $organization = $this->organization($request, $organizationId);
         abort_unless($request->user()->can('manageMembers', $organization), 403);
-        $role = $organization->customRoles()->whereKey($roleId)->firstOrFail();
-
-        DB::transaction(function () use ($organization, $role, $request): void {
+        $role = DB::transaction(function () use ($organization, $roleId, $request): OrganizationRole {
+            $role = $organization->customRoles()->whereKey($roleId)->lockForUpdate()->firstOrFail();
             // Keep assigned members on the archived profile so archiving cannot restore
             // the broader default permissions for that base role.
             $role->forceFill(['archived_at' => now()])->save();
             $this->audit($request, 'organization.role_archived', $role, []);
+
+            return $role;
         });
 
         return response()->json(['data' => ['id' => $role->id, 'archived' => true]]);
@@ -92,17 +93,21 @@ class OrganizationRoleController extends Controller
     {
         $organization = $this->organization($request, $organizationId);
         abort_unless($request->user()->can('manageMembers', $organization), 403);
-        $role = $organization->customRoles()->whereKey($roleId)->firstOrFail();
-        abort_if($role->archived_at !== null, 409, 'Archived staff roles cannot be assigned.');
-        $member = $organization->users()->where('users.id', $userId)->where('users.account_status', 'active')
-            ->wherePivot('status', 'active')->wherePivot('role', $role->base_role)->firstOrFail();
+        [$role, $memberId] = DB::transaction(function () use ($organization, $roleId, $userId, $request): array {
+            $role = $organization->customRoles()->whereKey($roleId)->lockForUpdate()->firstOrFail();
+            abort_if($role->archived_at !== null, 409, 'Archived staff roles cannot be assigned.');
+            $member = $organization->users()->where('users.id', $userId)->where('users.account_status', 'active')
+                ->wherePivot('status', 'active')->wherePivot('role', $role->base_role)->firstOrFail();
 
-        DB::table('organization_user')->where('organization_id', $organization->id)->where('user_id', $member->id)
-            ->where('role', $role->base_role)->where('status', 'active')->update(['custom_role_id' => $role->id, 'updated_at' => now()]);
-        $this->audit($request, 'organization.role_assigned', $role, ['member_id' => (int) $member->id]);
+            DB::table('organization_user')->where('organization_id', $organization->id)->where('user_id', $member->id)
+                ->where('role', $role->base_role)->where('status', 'active')->update(['custom_role_id' => $role->id, 'updated_at' => now()]);
+            $this->audit($request, 'organization.role_assigned', $role, ['member_id' => (int) $member->id]);
+
+            return [$role, (int) $member->id];
+        });
 
         return response()->json(['data' => [
-            'user_id' => (int) $member->id, 'custom_role_id' => $role->id,
+            'user_id' => $memberId, 'custom_role_id' => $role->id,
         ]]);
     }
 

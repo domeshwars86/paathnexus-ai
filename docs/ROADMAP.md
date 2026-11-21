@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Sprint sequence
+Milestone 0.253 serializes custom-role assignment and archival while preserving existing members' narrow permissions. Focused and full Laravel tests pass (121 tests, 2,642 assertions); PostgreSQL concurrency verification remains pending.
 Milestone 0.252 serializes live-session status transitions and concurrent first-time joins. Focused tests and the full Laravel suite pass (121 tests, 2,642 assertions); PostgreSQL concurrency verification remains pending.
 Milestone 0.251 serializes guardian-student link and unlink operations; focused guardian workflow and the full Laravel suite pass (121 tests, 2,642 assertions). PostgreSQL concurrency verification remains pending.
 Milestone 0.250 aligns the invitation-registration path with workspace-first lock ordering; the focused and full Laravel suites pass (121 tests, 2,639 assertions).

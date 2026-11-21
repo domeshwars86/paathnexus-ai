@@ -2,6 +2,12 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.253 — Serialize custom-role assignment and archival
+- **Finding:** Role assignment checked `archived_at` outside a transaction, while archival updated the same role independently, allowing a concurrent assignment to succeed after archival.
+- **Fix:** Both assignment and archival now lock the organization-scoped role row before checking or changing its state. Existing assigned members remain on archived profiles.
+- **Verification:** Focused role archival/assignment test passed (1 test, 14 assertions); full Laravel suite passed (121 tests, 2,642 assertions); PHP lint and `git diff --check` passed. PostgreSQL concurrency remains a CI verification item.
+- **Next:** Continue API-scope and release-readiness audits.
+
 ## Milestone 0.252 — Serialize live-session state and first access
 - **Finding:** Concurrent status transitions could validate against stale session state. Concurrent first-time joins could both observe no access row and collide on its unique key.
 - **Fix:** Session updates now lock and revalidate the tenant-scoped session before checking transition rules. Join requests take the same session lock, reauthorize and recheck the time window, then update/create the access record.
