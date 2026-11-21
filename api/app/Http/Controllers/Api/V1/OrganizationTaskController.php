@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\OrganizationTask;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrganizationTaskController extends Controller
 {
@@ -73,13 +74,17 @@ class OrganizationTaskController extends Controller
         $organization = $this->memberOrganization($request, $organizationId);
         abort_unless($request->user()->can('manageTasks', $organization), 403);
 
-        $task = $organization->tasks()->whereKey($taskId)->firstOrFail();
-        abort_if($task->archived_at !== null, 422, 'Restore this task before completing it.');
-        if ($task->status !== 'completed') {
-            $task->forceFill(['status' => 'completed', 'completed_at' => now()])->save();
-        }
+        $task = DB::transaction(function () use ($organization, $taskId): OrganizationTask {
+            $task = $organization->tasks()->whereKey($taskId)->lockForUpdate()->firstOrFail();
+            abort_if($task->archived_at !== null, 422, 'Restore this task before completing it.');
+            if ($task->status !== 'completed') {
+                $task->forceFill(['status' => 'completed', 'completed_at' => now()])->save();
+            }
 
-        return response()->json(['data' => $this->data($task->refresh())]);
+            return $task->refresh();
+        });
+
+        return response()->json(['data' => $this->data($task)]);
     }
 
     public function update(Request $request, string $organizationId, string $taskId): JsonResponse
@@ -87,8 +92,6 @@ class OrganizationTaskController extends Controller
         $organization = $this->memberOrganization($request, $organizationId);
         abort_unless($request->user()->can('manageTasks', $organization), 403);
 
-        $task = $organization->tasks()->whereKey($taskId)->firstOrFail();
-        abort_if($task->archived_at !== null, 422, 'Restore this task before editing it.');
         $validated = $request->validate([
             'title' => ['sometimes', 'required', 'string', 'max:160'],
             'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
@@ -98,9 +101,15 @@ class OrganizationTaskController extends Controller
 
         abort_if($validated === [], 422, 'Provide at least one task field to update.');
 
-        $task->fill($validated)->save();
+        $task = DB::transaction(function () use ($organization, $taskId, $validated): OrganizationTask {
+            $task = $organization->tasks()->whereKey($taskId)->lockForUpdate()->firstOrFail();
+            abort_if($task->archived_at !== null, 422, 'Restore this task before editing it.');
+            $task->fill($validated)->save();
 
-        return response()->json(['data' => $this->data($task->refresh()->load('assignee:id,name'))]);
+            return $task->refresh()->load('assignee:id,name');
+        });
+
+        return response()->json(['data' => $this->data($task)]);
     }
 
     public function archive(Request $request, string $organizationId, string $taskId): JsonResponse
@@ -108,12 +117,16 @@ class OrganizationTaskController extends Controller
         $organization = $this->memberOrganization($request, $organizationId);
         abort_unless($request->user()->can('manageTasks', $organization), 403);
 
-        $task = $organization->tasks()->whereKey($taskId)->firstOrFail();
-        if ($task->archived_at === null) {
-            $task->forceFill(['archived_at' => now()])->save();
-        }
+        $task = DB::transaction(function () use ($organization, $taskId): OrganizationTask {
+            $task = $organization->tasks()->whereKey($taskId)->lockForUpdate()->firstOrFail();
+            if ($task->archived_at === null) {
+                $task->forceFill(['archived_at' => now()])->save();
+            }
 
-        return response()->json(['data' => $this->data($task->refresh()->load('assignee:id,name'))]);
+            return $task->refresh()->load('assignee:id,name');
+        });
+
+        return response()->json(['data' => $this->data($task)]);
     }
 
     public function restore(Request $request, string $organizationId, string $taskId): JsonResponse
@@ -121,12 +134,16 @@ class OrganizationTaskController extends Controller
         $organization = $this->memberOrganization($request, $organizationId);
         abort_unless($request->user()->can('manageTasks', $organization), 403);
 
-        $task = $organization->tasks()->whereKey($taskId)->firstOrFail();
-        if ($task->archived_at !== null) {
-            $task->forceFill(['archived_at' => null])->save();
-        }
+        $task = DB::transaction(function () use ($organization, $taskId): OrganizationTask {
+            $task = $organization->tasks()->whereKey($taskId)->lockForUpdate()->firstOrFail();
+            if ($task->archived_at !== null) {
+                $task->forceFill(['archived_at' => null])->save();
+            }
 
-        return response()->json(['data' => $this->data($task->refresh()->load('assignee:id,name'))]);
+            return $task->refresh()->load('assignee:id,name');
+        });
+
+        return response()->json(['data' => $this->data($task)]);
     }
 
     private function memberOrganization(Request $request, string $organizationId): Organization

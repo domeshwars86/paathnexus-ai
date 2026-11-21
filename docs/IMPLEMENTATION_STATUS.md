@@ -2,6 +2,12 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.258 — Serialize task lifecycle changes
+- **Finding:** Task edit, completion, archive, and restore checked state before saving without a row lock, so overlapping requests could violate the archived-task rules.
+- **Fix:** All four tenant-scoped lifecycle operations now lock and re-read the task in a transaction before checking state or saving.
+- **Verification:** Focused task workflow passed (1 test, 31 assertions); full Laravel suite passed (121 tests, 2,646 assertions). SQLite does not exercise row-lock concurrency; PostgreSQL CI remains necessary.
+- **Next:** Serialize concurrent support-feedback updates, then continue API-scope and release-readiness audits.
+
 ## Milestone 0.257 — Enforce teacher profile limits atomically
 - **Finding:** Teacher profile count and `max_teachers` entitlement were checked before insert without workspace serialization, allowing concurrent requests to exceed the plan cap.
 - **Fix:** Teacher profile creation now locks the active workspace, recounts active profiles, checks the current entitlement, and inserts inside one transaction.
