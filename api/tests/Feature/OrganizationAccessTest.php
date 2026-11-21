@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Organization;
 use App\Models\AssessmentAttempt;
+use App\Models\AttemptAnswer;
 use App\Models\OrganizationSubject;
 use App\Models\TeacherProfile;
 use App\Models\User;
@@ -793,6 +794,13 @@ class OrganizationAccessTest extends TestCase
         $this->actingAs($learnerAccount, 'sanctum')
             ->postJson($base.'/assessments/'.$assessment['id'].'/attempts/'.$attempt['id'].'/submit')
             ->assertOk()->assertJsonPath('data.status', 'submitted')->assertJsonPath('data.score', 5);
+        $this->actingAs($learnerAccount, 'sanctum')
+            ->putJson($base.'/assessments/'.$assessment['id'].'/attempts/'.$attempt['id'].'/answers/'.$question['id'], [
+                'selected_option_ids' => [$question['options'][1]['id']],
+            ])->assertUnprocessable();
+        $savedAnswer = AttemptAnswer::query()->where('attempt_id', $attempt['id'])->where('question_id', $question['id'])->firstOrFail();
+        $this->assertSame([$question['options'][0]['id']], $savedAnswer->selected_option_ids);
+        $this->assertDatabaseHas('assessment_attempts', ['id' => $attempt['id'], 'status' => 'submitted', 'score' => 5]);
         $this->actingAs($owner, 'sanctum')
             ->getJson($base.'/courses/'.$course['id'].'/assessments/'.$assessment['id'].'/attempts')
             ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.student_name', 'Nila Sen');

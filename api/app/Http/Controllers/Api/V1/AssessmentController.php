@@ -286,41 +286,47 @@ class AssessmentController extends Controller
     {
         [$organization, $assessment, $attempt, $student] = $this->ownedAttempt($request, $organizationId, $assessmentId, $attemptId);
         abort_unless($request->user()->can('takeAssessments', $organization), 403);
-        abort_unless($attempt->status === 'in_progress', 422, 'This attempt is no longer open.');
-        abort_if($attempt->expires_at && $attempt->expires_at->isPast(), 422, 'The assessment time limit has expired.');
         $attemptQuestionIds = $attempt->question_order ?? $assessment->questions()->pluck('question_id')->all();
         $assessmentQuestion = $assessment->questions()->whereIn('question_id', $attemptQuestionIds)->where('question_id', $questionId)->with('question.options')->firstOrFail();
         if ($assessmentQuestion->question->type === 'short_answer') {
             $validated = $request->validate(['response_text' => ['present', 'nullable', 'string', 'max:50000']]);
-            $answer = AttemptAnswer::updateOrCreate(
-                ['organization_id' => $organization->id, 'attempt_id' => $attempt->id, 'question_id' => $assessmentQuestion->question_id],
-                [
-                    'course_id' => $assessment->course_id, 'assessment_id' => $assessment->id,
-                    'selected_option_ids' => [], 'response_text' => trim($validated['response_text'] ?? ''),
-                    'is_correct' => null, 'points_awarded' => 0, 'grader_feedback' => null,
-                    'graded_by' => null, 'graded_at' => null,
-                ],
-            );
-
-            return response()->json(['data' => ['question_id' => $questionId, 'saved' => true, 'response_text' => $answer->response_text]]);
-        }
-
-        $validated = $request->validate(['selected_option_ids' => ['present', 'array', 'max:8'], 'selected_option_ids.*' => ['required', 'uuid', 'distinct']]);
-        $optionIds = $validated['selected_option_ids'];
-        $validOptionIds = $assessmentQuestion->question->options()->whereIn('id', $optionIds)->pluck('id')->all();
-        abort_unless(count($validOptionIds) === count($optionIds), 422, 'One or more selected options do not belong to this question.');
-        if ($assessmentQuestion->question->type === 'single_choice') {
-            abort_unless(count($optionIds) === 1, 422, 'Select exactly one option for this question.');
-        }
-        $answer = AttemptAnswer::updateOrCreate(
-            ['organization_id' => $organization->id, 'attempt_id' => $attempt->id, 'question_id' => $assessmentQuestion->question_id],
-            [
+            $answerAttributes = [
+                'course_id' => $assessment->course_id, 'assessment_id' => $assessment->id,
+                'selected_option_ids' => [], 'response_text' => trim($validated['response_text'] ?? ''),
+                'is_correct' => null, 'points_awarded' => 0, 'grader_feedback' => null,
+                'graded_by' => null, 'graded_at' => null,
+            ];
+        } else {
+            $validated = $request->validate(['selected_option_ids' => ['present', 'array', 'max:8'], 'selected_option_ids.*' => ['required', 'uuid', 'distinct']]);
+            $optionIds = $validated['selected_option_ids'];
+            $validOptionIds = $assessmentQuestion->question->options()->whereIn('id', $optionIds)->pluck('id')->all();
+            abort_unless(count($validOptionIds) === count($optionIds), 422, 'One or more selected options do not belong to this question.');
+            if ($assessmentQuestion->question->type === 'single_choice') {
+                abort_unless(count($optionIds) === 1, 422, 'Select exactly one option for this question.');
+            }
+            $answerAttributes = [
                 'course_id' => $assessment->course_id, 'assessment_id' => $assessment->id,
                 'selected_option_ids' => array_values($optionIds), 'response_text' => null,
                 'is_correct' => null, 'points_awarded' => 0, 'grader_feedback' => null,
                 'graded_by' => null, 'graded_at' => null,
-            ],
-        );
+            ];
+        }
+        $answer = DB::transaction(function () use ($organization, $assessment, $attempt, $student, $assessmentQuestion, $answerAttributes): AttemptAnswer {
+            $lockedAttempt = AssessmentAttempt::query()->where('organization_id', $organization->id)
+                ->where('assessment_id', $assessment->id)->where('student_id', $student->id)
+                ->whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+            abort_unless($lockedAttempt->status === 'in_progress', 422, 'This attempt is no longer open.');
+            abort_if($lockedAttempt->expires_at && $lockedAttempt->expires_at->isPast(), 422, 'The assessment time limit has expired.');
+
+            return AttemptAnswer::updateOrCreate(
+                ['organization_id' => $organization->id, 'attempt_id' => $lockedAttempt->id, 'question_id' => $assessmentQuestion->question_id],
+                $answerAttributes,
+            );
+        });
+
+        if ($assessmentQuestion->question->type === 'short_answer') {
+            return response()->json(['data' => ['question_id' => $questionId, 'saved' => true, 'response_text' => $answer->response_text]]);
+        }
 
         return response()->json(['data' => ['question_id' => $questionId, 'saved' => true, 'selected_option_ids' => $answer->selected_option_ids]]);
     }
@@ -333,8 +339,11 @@ class AssessmentController extends Controller
         $score = 0.0;
         $maxPoints = 0.0;
         $needsReview = false;
-        DB::transaction(function () use ($assessment, $attempt, &$score, &$maxPoints, &$needsReview): void {
-            $attempt->newQuery()->whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+        $attempt = DB::transaction(function () use ($assessment, $attempt, &$score, &$maxPoints, &$needsReview): AssessmentAttempt {
+            $attempt = AssessmentAttempt::query()->where('organization_id', $attempt->organization_id)
+                ->where('assessment_id', $assessment->id)->where('student_id', $attempt->student_id)
+                ->whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+            abort_unless($attempt->status === 'in_progress', 422, 'This attempt has already been submitted.');
             $attemptQuestionIds = $attempt->question_order ?? $assessment->questions()->pluck('question_id')->all();
             foreach ($assessment->questions()->whereIn('question_id', $attemptQuestionIds)->with('question.options')->get() as $item) {
                 $maxPoints += (float) $item->points;
@@ -370,6 +379,8 @@ class AssessmentController extends Controller
                 'status' => $status, 'score' => round($score, 2), 'max_points' => round($maxPoints, 2), 'submitted_at' => now(),
                 'review_status' => $needsReview ? 'pending' : 'not_required',
             ])->save();
+
+            return $attempt;
         });
         $attempt->refresh();
 

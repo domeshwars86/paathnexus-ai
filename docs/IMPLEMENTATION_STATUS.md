@@ -2,6 +2,12 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.260 — Serialize assessment answers with submission
+- **Finding:** Answer saves checked attempt status before writing without the attempt lock, so an autosave could race with submission and mutate an answer after its score was calculated. Duplicate submissions also re-used a stale in-memory state after waiting for the same lock.
+- **Fix:** Answer saves now lock and re-read the tenant-, assessment-, and learner-scoped attempt before rechecking status/expiry and upserting the answer. Submission rechecks status after acquiring that same attempt lock.
+- **Verification:** Organization API workflow passed (16 tests, 476 assertions); full Laravel suite passed (121 tests, 2,649 assertions); PHP lint and `git diff --check` passed. SQLite does not exercise row-lock concurrency; PostgreSQL CI remains necessary.
+- **Next:** Add dedicated public feature/course/pricing routes, then design the missing resumable first-workspace onboarding flow.
+
 ## Milestone 0.259 — Serialize support-feedback updates
 - **Finding:** Feedback response and status changes were compared against a model loaded before the transaction, so overlapping manager updates could overwrite newer response data or miss a notification transition.
 - **Fix:** The controller now locks the workspace-scoped feedback row, derives omitted fields and change flags from the locked row, saves the response/status, and updates the submitter notification in the same transaction.
