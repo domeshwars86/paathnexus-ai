@@ -60,7 +60,6 @@ class LearningController extends Controller
     {
         $organization = $this->memberOrganization($request, $organizationId);
         abort_unless($request->user()->can('manageCourses', $organization), 403);
-        $entitlements->assertBelowLimit($organization, 'max_courses', $organization->courses()->whereIn('status', ['active', 'draft'])->count());
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:64', Rule::unique('courses', 'code')->where('organization_id', $organization->id)],
             'title' => ['required', 'string', 'max:160'],
@@ -69,13 +68,23 @@ class LearningController extends Controller
             'academic_year_id' => ['nullable', 'uuid'],
             'subject_id' => ['nullable', 'uuid'],
         ]);
-        if (! empty($validated['academic_year_id'])) {
-            abort_unless($organization->academicYears()->whereKey($validated['academic_year_id'])->exists(), 404);
-        }
-        if (! empty($validated['subject_id'])) {
-            abort_unless($organization->subjects()->where('status', 'active')->whereKey($validated['subject_id'])->exists(), 404);
-        }
-        $course = $organization->courses()->create([...$validated, 'created_by' => $request->user()->id]);
+        $course = DB::transaction(function () use ($organization, $request, $validated, $entitlements): Course {
+            $lockedOrganization = Organization::query()->whereKey($organization->id)
+                ->where('status', 'active')->lockForUpdate()->firstOrFail();
+            $entitlements->assertBelowLimit(
+                $lockedOrganization,
+                'max_courses',
+                $lockedOrganization->courses()->whereIn('status', ['active', 'draft'])->count(),
+            );
+            if (! empty($validated['academic_year_id'])) {
+                abort_unless($lockedOrganization->academicYears()->whereKey($validated['academic_year_id'])->exists(), 404);
+            }
+            if (! empty($validated['subject_id'])) {
+                abort_unless($lockedOrganization->subjects()->where('status', 'active')->whereKey($validated['subject_id'])->exists(), 404);
+            }
+
+            return $lockedOrganization->courses()->create([...$validated, 'created_by' => $request->user()->id]);
+        });
 
         return response()->json(['data' => $this->courseData($course->load(['subject:id,code,name', 'academicYear:id,name']))], 201);
     }

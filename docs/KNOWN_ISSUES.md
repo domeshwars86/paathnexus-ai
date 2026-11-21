@@ -60,3 +60,4 @@
 - Custom-role assignment and archival now serialize on the tenant-scoped role row. Existing assignments remain attached to archived profiles; concurrent assignment/archive behavior still needs PostgreSQL CI verification.
 - Active-year changes and timetable writes now lock the workspace and repeat overlap checks inside transactions. SQLite verifies sequential conflict behavior; concurrent active-year and overlapping schedule writes still need PostgreSQL CI.
 - Student creation checks active profile count and plan entitlements under the workspace lock. The limit regression passes on SQLite, but concurrent limit enforcement still needs PostgreSQL CI verification.
+- Course creation now checks active/draft course count and `max_courses` under the workspace lock. The entitlement regression passes on SQLite; concurrent course-cap enforcement still needs PostgreSQL CI verification.

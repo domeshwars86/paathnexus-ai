@@ -2,6 +2,12 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.256 — Enforce course limits atomically
+- **Finding:** Course count and `max_courses` entitlement were checked before course creation without workspace serialization, allowing concurrent requests to exceed the plan cap.
+- **Fix:** Course creation now locks the active workspace, recounts active/draft courses, checks the current entitlement, revalidates optional academic-year/subject scope, and inserts in one transaction.
+- **Verification:** Focused plan-entitlement test passed (1 test, 11 assertions); full Laravel suite passed (121 tests, 2,642 assertions); PHP lint and `git diff --check` passed. SQLite does not exercise row-lock concurrency; PostgreSQL CI remains necessary.
+- **Next:** Continue API-scope and release-readiness audits.
+
 ## Milestone 0.255 — Enforce student limits under a workspace lock
 - **Finding:** Student count and plan entitlement were checked before insert without serialization, so concurrent requests could both pass a `max_students` cap and exceed it.
 - **Fix:** Student creation now locks the active workspace, recounts active students, and checks the current plan limit inside the transaction before creating the profile.
