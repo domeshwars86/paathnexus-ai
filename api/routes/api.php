@@ -32,6 +32,7 @@ Route::prefix('v1')->group(function (): void {
 
     Route::middleware('throttle:60,1')->prefix('catalog')->group(function (): void {
         Route::get('/courses', [\App\Http\Controllers\Api\V1\PublicCatalogController::class, 'courses']);
+        Route::get('/educators', [\App\Http\Controllers\Api\V1\PublicCatalogController::class, 'educators']);
         Route::get('/plans', [\App\Http\Controllers\Api\V1\PublicCatalogController::class, 'plans']);
     });
 

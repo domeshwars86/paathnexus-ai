@@ -760,6 +760,60 @@
                 ]
             }
         },
+        "/catalog/educators": {
+            "get": {
+                "operationId": "getPublicCatalogEducatorsCatalogEducators",
+                "summary": "Get Educators",
+                "description": "Request validation, response fields, capabilities, and tenant scope are documented in [API_SPECIFICATION.md](API_SPECIFICATION.md).",
+                "tags": [
+                    "Public Catalog"
+                ],
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "description": "Search opted-in public educator names, titles, biographies, and organization names.",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "description": "One-based result page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicEducatorCatalogResponse"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Error response. Status and field errors depend on the operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/catalog/plans": {
             "get": {
                 "operationId": "getPublicCatalogPlansCatalogPlans",
@@ -11359,6 +11413,99 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/PublicCourse"
+                        }
+                    },
+                    "meta": {
+                        "type": "object",
+                        "required": [
+                            "current_page",
+                            "last_page",
+                            "total"
+                        ],
+                        "properties": {
+                            "current_page": {
+                                "type": "integer"
+                            },
+                            "last_page": {
+                                "type": "integer"
+                            },
+                            "total": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            },
+            "PublicEducator": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "name",
+                    "title",
+                    "bio",
+                    "organization_name",
+                    "organization_slug",
+                    "organization_type"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "bio": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "organization_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "organization_slug": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "organization_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "school",
+                            "college",
+                            "coaching",
+                            "academy",
+                            "educator",
+                            null
+                        ]
+                    }
+                }
+            },
+            "PublicEducatorCatalogResponse": {
+                "type": "object",
+                "required": [
+                    "data",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicEducator"
                         }
                     },
                     "meta": {

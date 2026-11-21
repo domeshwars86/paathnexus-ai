@@ -51,6 +51,7 @@ export async function assignCustomTeacherRole(token: string, organizationId: str
 export type User = { name: string; email: string; is_platform_admin?: boolean };
 export type SubscriptionPlan = { id: string; code: string; name: string; audience: 'all' | 'institution' | 'educator'; description: string | null; amount_paise: number | null; billing_interval: 'month' | 'year' | 'custom'; entitlements: Record<string, number | null>; is_active: boolean };
 export type PublicCourse = { id: string; code: string; title: string; description: string | null; amount_paise: number; organization_name: string | null; organization_slug: string | null; organization_type: string | null; subject: string | null; lesson_count: number; instructors: { name: string; title: string | null; bio: string | null }[] };
+export type PublicEducator = { id: string; name: string; title: string | null; bio: string | null; organization_name: string | null; organization_slug: string | null; organization_type: string | null };
 export type PublicPlan = Omit<SubscriptionPlan, 'is_active'>;
 export type WorkspaceSubscription = { status: 'active' | 'change_pending'; plan: SubscriptionPlan; requested_plan: SubscriptionPlan | null; requested_at: string | null; available_plans: SubscriptionPlan[] };
 export type SubscriptionRequest = { organization_id: string; organization_name: string; plan: SubscriptionPlan; requested_plan: SubscriptionPlan; requested_at: string | null };
@@ -463,6 +464,13 @@ export async function listPublicCourses(query = '', page = 1): Promise<{ items: 
   const search = new URLSearchParams(); if (query.trim()) search.set('q', query.trim());
   search.set('page', String(page));
   const response = await request<{ data: PublicCourse[]; meta: { total: number; current_page: number; last_page: number } }>(`/catalog/courses${search.size ? `?${search}` : ''}`);
+  return { items: response.data, total: response.meta.total, page: response.meta.current_page, lastPage: response.meta.last_page };
+}
+
+export async function listPublicEducators(query = '', page = 1): Promise<{ items: PublicEducator[]; total: number; page: number; lastPage: number }> {
+  const search = new URLSearchParams(); if (query.trim()) search.set('q', query.trim());
+  search.set('page', String(page));
+  const response = await request<{ data: PublicEducator[]; meta: { total: number; current_page: number; last_page: number } }>(`/catalog/educators?${search}`);
   return { items: response.data, total: response.meta.total, page: response.meta.current_page, lastPage: response.meta.last_page };
 }
 

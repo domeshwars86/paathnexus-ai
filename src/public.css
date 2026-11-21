@@ -85,6 +85,21 @@
 .public-page-educators .public-hero,.public-page-educators .public-trust,.public-page-educators .public-features,.public-page-educators .public-catalog,.public-page-educators .public-pricing,
 .public-page-courses .public-hero,.public-page-courses .public-trust,.public-page-courses .public-features,.public-page-courses .public-educators,.public-page-courses .public-pricing,
 .public-page-pricing .public-hero,.public-page-pricing .public-trust,.public-page-pricing .public-features,.public-page-pricing .public-educators,.public-page-pricing .public-catalog{display:none}
+.public-page-features .public-educator-directory,.public-page-courses .public-educator-directory,.public-page-pricing .public-educator-directory{display:none}
+
+.public-educator-directory{padding:76px clamp(22px,8vw,116px);background:#fff}
+.public-educator-directory-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;max-width:1160px;margin:0 auto 28px}
+.public-educator-directory-heading>div{max-width:560px}
+.public-educator-directory-heading h2{margin:8px 0}
+.public-educator-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px;max-width:1160px;margin:0 auto}
+.public-educator-card{display:flex;align-items:flex-start;gap:13px;min-width:0;padding:18px;border:1px solid #ecebf2;border-radius:13px;background:#fff}
+.public-educator-avatar{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:50%;background:#efedff;color:#5c52ca;font:750 18px Manrope,sans-serif}
+.public-educator-card-copy{min-width:0}
+.public-educator-card h3{margin:1px 0 5px;font-size:15px}
+.public-educator-card strong,.public-educator-card small{display:block;color:#686a7d;font-size:10px;line-height:1.5}
+.public-educator-card small{margin-top:2px}
+.public-educator-card p{margin:9px 0 0;color:#686a7d;font-size:11px;line-height:1.55;overflow-wrap:anywhere}
+@media(max-width:620px){.public-educator-directory{padding:58px 18px}.public-educator-directory-heading{align-items:stretch;flex-direction:column;gap:20px}}
 
 /* Keep muted public-site text readable against white and tinted sections. */
 .public-site{--public-muted:#686a7d}

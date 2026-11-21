@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type MouseEvent as ReactMo
 import {
   ArrowRight, BookOpen, CalendarDays, Check, GraduationCap, Menu, Search, ShieldCheck, Sparkles, Users, X,
 } from 'lucide-react';
-import { listPublicCourses, listPublicPlans, type PublicCourse, type PublicPlan } from './lib/auth';
+import { listPublicCourses, listPublicEducators, listPublicPlans, type PublicCourse, type PublicEducator, type PublicPlan } from './lib/auth';
 import { LanguageSwitcher, useLocale } from './lib/locale';
 
 type Props = { onSignIn: () => void; onRegister: () => void };
@@ -32,12 +32,20 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
   const { locale, t } = useLocale();
   const [publicPage, setPublicPage] = useState<PublicPage>(() => pageFromPath(window.location.pathname));
   const [courses, setCourses] = useState<PublicCourse[]>([]);
+  const [educators, setEducators] = useState<PublicEducator[]>([]);
   const [plans, setPlans] = useState<PublicPlan[]>([]);
   const [total, setTotal] = useState(0);
   const [lastPage, setLastPage] = useState(1);
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState('');
+  const [educatorQuery, setEducatorQuery] = useState('');
+  const [educatorSearch, setEducatorSearch] = useState('');
+  const [educatorTotal, setEducatorTotal] = useState(0);
+  const [educatorPage, setEducatorPage] = useState(1);
+  const [educatorLastPage, setEducatorLastPage] = useState(1);
+  const [loadingEducators, setLoadingEducators] = useState(false);
+  const [educatorError, setEducatorError] = useState('');
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -78,6 +86,22 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
     }
   }
 
+  async function loadEducators(term = '', pageNumber = 1, append = false) {
+    setLoadingEducators(true);
+    setEducatorError('');
+    try {
+      const result = await listPublicEducators(term, pageNumber);
+      setEducators((current) => append ? [...current, ...result.items] : result.items);
+      setEducatorTotal(result.total);
+      setEducatorPage(result.page);
+      setEducatorLastPage(result.lastPage);
+    } catch (cause) {
+      setEducatorError(cause instanceof Error ? cause.message : t('home.noEducators'));
+    } finally {
+      setLoadingEducators(false);
+    }
+  }
+
   useEffect(() => {
     document.documentElement.lang = locale === 'hi' ? 'hi-IN' : 'en';
   }, [locale]);
@@ -99,6 +123,7 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
   useEffect(() => {
     if (publicPage === 'home' || publicPage === 'courses') void loadCourses();
     if (publicPage === 'home' || publicPage === 'pricing') void loadPlans();
+    if (publicPage === 'home' || publicPage === 'educators') void loadEducators();
   }, [publicPage]);
 
   useEffect(() => {
@@ -150,6 +175,13 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
     const term = query.trim();
     setSearch(term);
     void loadCourses(term);
+  }
+
+  function submitEducatorSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const term = educatorQuery.trim();
+    setEducatorSearch(term);
+    void loadEducators(term);
   }
 
   function openCourse(event: ReactMouseEvent<HTMLElement>, course: PublicCourse) {
@@ -259,6 +291,21 @@ export default function PublicHome({ onSignIn, onRegister }: Props) {
         <article><span>02</span><div><strong>{t('home.stepTwo')}</strong><small>{t('home.stepTwoDescription')}</small></div></article>
         <article><span>03</span><div><strong>{t('home.stepThree')}</strong><small>{t('home.stepThreeDescription')}</small></div></article>
       </section>
+    </section>
+
+    <section className="public-educator-directory" id="educator-directory">
+      <div className="public-section-heading public-educator-directory-heading">
+        <div><span className="public-kicker">{t('home.educatorDirectoryKicker')}</span><h2>{t('home.educatorDirectoryTitle')}</h2><p>{t('home.educatorDirectoryDescription')}</p></div>
+        <form className="public-course-search" onSubmit={submitEducatorSearch}><Search size={17} /><input aria-label={t('home.educatorSearchLabel')} placeholder={t('home.educatorSearchPlaceholder')} value={educatorQuery} onChange={(event) => setEducatorQuery(event.target.value)} /><button type="submit">{t('home.searchEducators')}</button></form>
+      </div>
+      {educatorSearch && !loadingEducators && !educatorError && <div className="public-search-count">{educatorTotal} {t('home.educatorSearchResults')} “{educatorSearch}”</div>}
+      {educatorError ? <div className="public-empty" role="alert">{educatorError}<button className="public-retry" onClick={() => void loadEducators(educatorSearch)}>{t('common.tryAgain')}</button></div>
+        : loadingEducators && educatorPage === 1 ? <div className="public-empty" role="status">{t('home.loadingEducators')}</div>
+          : educators.length ? <div className="public-educator-grid">{educators.map((educator) => <article className="public-educator-card" key={educator.id}>
+            <span className="public-educator-avatar" aria-hidden="true">{educator.name.slice(0, 1).toUpperCase()}</span><div className="public-educator-card-copy"><h3>{educator.name}</h3><strong>{educator.title || t('home.educator')}</strong><small>{t('home.educatorAt').replace('{organization}', educator.organization_name || 'PaathNexus')}</small>{educator.bio && <p>{educator.bio}</p>}</div>
+          </article>)}</div>
+            : <div className="public-empty">{educatorSearch ? t('home.noEducators') : t('home.noPublicEducators')}</div>}
+      {educatorPage < educatorLastPage && !educatorError && <button className="public-load-more" disabled={loadingEducators} onClick={() => void loadEducators(educatorSearch, educatorPage + 1, true)}>{loadingEducators ? t('home.loadingEducators') : t('home.loadMoreEducators')}</button>}
     </section>
 
     <section className="public-catalog" id="courses">

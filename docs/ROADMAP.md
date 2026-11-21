@@ -1,8 +1,9 @@
 # Roadmap
 
 ## Sprint sequence
+Milestone 0.263 adds a searchable public educator directory backed by an opt-in, active-membership-scoped API. Public catalog and OpenAPI checks passed; the full Laravel suite passed (122 tests, 2,665 assertions), Chromium passed (53 tests), Vitest passed (12 tests), and the frontend production build passed. Individual educator profile and contact workflows remain future work.
 Milestone 0.262 adds an owner onboarding checklist for workspace settings, active academic year, first class, and team invitations. Progress derives from API records; review and pause state persists per browser. Onboarding tests passed (3), all 53 Chromium tests and 12 Vitest tests passed, and the production build passed.
-Milestone 0.261 adds direct responsive routes for platform features, educator information, course discovery, and pricing. The focused Chromium route/navigation/responsive checks passed (3 tests) and the production frontend build passed; a standalone instructor directory remains unimplemented.
+Milestone 0.261 adds direct responsive routes for platform features, educator information, course discovery, and pricing. The focused Chromium route/navigation/responsive checks passed (3 tests) and the production frontend build passed.
 Milestone 0.260 serializes learner answer saves and exam submission under the attempt row lock and rejects late answer changes after submission. Organization API tests passed (16 tests, 476 assertions); the full Laravel suite passed (121 tests, 2,649 assertions). PostgreSQL concurrency verification remains pending.
 Milestone 0.259 locks feedback records while updating status, response, responder metadata, and submitter notifications. Focused feedback tests passed (3 tests, 62 assertions); the full Laravel suite passed (121 tests, 2,646 assertions). PostgreSQL concurrency verification remains pending.
 Milestone 0.258 serializes task edit, completion, archive, and restore using a workspace-scoped task row lock. Focused task workflow passed (1 test, 31 assertions) and the full Laravel suite passed (121 tests, 2,646 assertions); PostgreSQL concurrency verification remains pending.

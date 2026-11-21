@@ -47,6 +47,7 @@ test('public homepage stays usable without horizontal overflow at target viewpor
 
 test('public feature, educator, course, and pricing pages support direct routes and responsive layouts', async ({ page }) => {
   await page.route('**/api/v1/catalog/courses**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [], meta: { total: 0, current_page: 1, last_page: 1 } }) }));
+  await page.route('**/api/v1/catalog/educators**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [{ id: 'educator-1', name: 'Asha Rao', title: 'Biology educator', bio: 'Makes biology approachable.', organization_name: 'Learning Academy', organization_slug: 'learning-academy', organization_type: 'academy' }], meta: { total: 1, current_page: 1, last_page: 1 } }) }));
   await page.route('**/api/v1/catalog/plans', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [] }) }));
 
   const routes = [
@@ -61,6 +62,10 @@ test('public feature, educator, course, and pricing pages support direct routes 
     await expect(page.getByRole('banner')).toBeVisible();
     await expect(page.getByRole('main').getByRole('heading', { name: heading })).toBeVisible();
     await expect(page).toHaveTitle(title);
+    if (path === '/educators') {
+      await expect(page.getByRole('heading', { name: 'Meet our educators' })).toBeVisible();
+      await expect(page.getByRole('article').filter({ hasText: 'Asha Rao' })).toContainText('Biology educator');
+    }
     await expect(page.getByRole('contentinfo')).toBeVisible();
     await expect(page.locator('.public-hero')).toBeHidden();
     for (const width of responsiveWidths) {

@@ -2,18 +2,25 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.263 — Add a privacy-scoped public educator directory
+- **Finding:** The `/educators` page explained the platform but did not let visitors discover instructors who had opted into public display.
+- **Fix:** Added a searchable, paginated public educator API and directory cards on the `/educators` route. The API includes only active opted-in profiles for active teacher memberships in active workspaces and returns public profile fields without emails, user IDs, or employee codes. Added the API contract and generated OpenAPI update.
+- **Verification:** Public catalog and OpenAPI API tests passed; full Laravel suite passed (122 tests, 2,665 assertions). Full Chromium suite passed (53 tests); Vitest passed (12 tests); TypeScript and Vite production build passed. The educator route was checked with synthetic data across 320–1440px widths.
+- **Limitations:** Directory listings have no individual profile details page or contact workflow. Directory cards render the content that educators have published.
+- **Next:** Continue the remaining ERP and production-integration backlog, prioritizing operational gaps that can be completed and verified locally.
+
 ## Milestone 0.262 — Add resumable new-workspace onboarding
 - **Finding:** Newly registered owners landed directly on Overview without guidance for workspace settings, an academic year, classes, or inviting colleagues.
 - **Fix:** Owner Overview now shows a guided checklist wired to the existing settings, schedule, classes, and invitation workflows. Academic-year, class, and invitation steps reflect workspace API data; reviewed and paused state persists in browser storage and can be resumed.
 - **Verification:** Onboarding browser tests passed (3 tests), including reload/pause/resume, data-derived progress, 375px layout, and desktop/mobile axe scans. Full Chromium suite passed (53 tests); Vitest passed (12 tests); production build and TypeScript checks passed.
 - **Limitations:** Checklist review and pause state are stored per browser, not synchronized across devices. Completion of academic year, class, and invitation steps is derived from current API records.
-- **Next:** Implement a public educator directory for opted-in instructor profiles, then continue the remaining ERP and production-integration backlog.
+- **Next:** Add a privacy-scoped public educator directory, then continue the remaining ERP and production-integration backlog.
 
 ## Milestone 0.261 — Add shareable public product pages
 - **Finding:** Platform features, educator tools, public courses, and pricing were only homepage anchor sections, so visitors could not link directly to those product pages.
 - **Fix:** Added client-side `/features`, `/educators`, `/courses`, and `/pricing` routes using the existing responsive sections and live public catalog data, with browser-history navigation, active-page semantics, and route-specific document titles.
 - **Verification:** Focused Chromium suite passed (3 tests) for direct routes, mobile navigation/focus, and homepage layout across 320–1440px; `npm run build` passed.
-- **Limitations:** Instructor profiles are shown with opted-in public courses; a standalone searchable instructor directory is not implemented.
+- **Limitations:** Route pages share the existing public marketing sections; they are client-rendered SPA routes.
 - **Next:** Implement resumable organization onboarding for newly registered workspace owners.
 
 ## Milestone 0.260 — Serialize assessment answers with submission

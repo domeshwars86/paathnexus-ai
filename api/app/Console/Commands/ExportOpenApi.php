@@ -581,6 +581,24 @@ class ExportOpenApi extends Command
                             ]],
                         ],
                     ],
+                    'PublicEducator' => [
+                        'type' => 'object', 'required' => ['id', 'name', 'title', 'bio', 'organization_name', 'organization_slug', 'organization_type'],
+                        'properties' => [
+                            'id' => ['type' => 'string', 'format' => 'uuid'], 'name' => ['type' => 'string'],
+                            'title' => ['type' => ['string', 'null']], 'bio' => ['type' => ['string', 'null']],
+                            'organization_name' => ['type' => ['string', 'null']], 'organization_slug' => ['type' => ['string', 'null']],
+                            'organization_type' => ['type' => ['string', 'null'], 'enum' => ['school', 'college', 'coaching', 'academy', 'educator', null]],
+                        ],
+                    ],
+                    'PublicEducatorCatalogResponse' => [
+                        'type' => 'object', 'required' => ['data', 'meta'],
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PublicEducator']],
+                            'meta' => ['type' => 'object', 'required' => ['current_page', 'last_page', 'total'], 'properties' => [
+                                'current_page' => ['type' => 'integer'], 'last_page' => ['type' => 'integer'], 'total' => ['type' => 'integer'],
+                            ]],
+                        ],
+                    ],
                     'SubscriptionPlan' => [
                         'type' => 'object', 'required' => ['id', 'code', 'name', 'audience', 'description', 'amount_paise', 'billing_interval', 'entitlements'],
                         'properties' => [
@@ -2202,6 +2220,10 @@ class ExportOpenApi extends Command
                 ['name' => 'q', 'required' => false, 'description' => 'Search public course titles, codes, and subjects.', 'schema' => ['type' => 'string', 'maxLength' => 100]],
                 ['name' => 'page', 'required' => false, 'description' => 'One-based result page.', 'schema' => ['type' => 'integer', 'minimum' => 1]],
             ],
+            '/catalog/educators' => [
+                ['name' => 'q', 'required' => false, 'description' => 'Search opted-in public educator names, titles, biographies, and organization names.', 'schema' => ['type' => 'string', 'maxLength' => 100]],
+                ['name' => 'page', 'required' => false, 'description' => 'One-based result page.', 'schema' => ['type' => 'integer', 'minimum' => 1]],
+            ],
             '/organizations/{organizationId}/fee-invoices' => [
                 ['name' => 'page', 'required' => false, 'description' => 'One-based result page.', 'schema' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 1000000]],
                 ['name' => 'per_page', 'required' => false, 'description' => 'Page size (1–100; defaults to 50).', 'schema' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 100]],
@@ -2316,6 +2338,7 @@ class ExportOpenApi extends Command
             'api/v1/organizations/{organizationId}/fee-invoices/{invoiceId}/void' => 'FeeInvoiceVoidResponse',
             'api/v1/organizations/{organizationId}/fee-invoices/{invoiceId}/payments' => 'FeePaymentResponse',
             'api/v1/catalog/courses' => 'PublicCourseCatalogResponse',
+            'api/v1/catalog/educators' => 'PublicEducatorCatalogResponse',
             'api/v1/catalog/plans' => 'PublicPlanCatalogResponse',
             'api/v1/catalog/course-orders/{orderId}' => 'CourseOrderResponse',
             'api/v1/catalog/courses/{courseId}/enroll' => 'PublicCourseEnrollmentResponse',

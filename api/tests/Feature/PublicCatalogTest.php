@@ -41,6 +41,43 @@ class PublicCatalogTest extends TestCase
             ->assertJsonMissing(['is_active' => true]);
     }
 
+    public function test_educator_directory_only_lists_active_opted_in_teacher_profiles(): void
+    {
+        $organization = Organization::create(['name' => 'Public Educator Academy', 'slug' => 'public-educator-academy', 'type' => 'academy', 'status' => 'active']);
+        $inactiveOrganization = Organization::create(['name' => 'Closed Educator Academy', 'slug' => 'closed-educator-academy', 'type' => 'academy', 'status' => 'suspended']);
+        $publicUser = User::factory()->create(['name' => 'Asha Rao']);
+        $privateUser = User::factory()->create(['name' => 'Dev Shah']);
+        $suspendedUser = User::factory()->create(['name' => 'Inactive Teacher', 'account_status' => 'suspended']);
+        foreach ([$publicUser, $privateUser, $suspendedUser] as $user) {
+            $organization->users()->attach($user, ['role' => 'teacher', 'status' => 'active', 'joined_at' => now()]);
+        }
+        $publicProfile = TeacherProfile::create([
+            'organization_id' => $organization->id, 'employee_code' => 'PRIVATE-EMP-1', 'name' => 'Asha Rao',
+            'user_id' => $publicUser->id, 'public_title' => 'Biology educator', 'public_bio' => 'Teaches biology and life science.', 'is_public' => true,
+        ]);
+        TeacherProfile::create([
+            'organization_id' => $organization->id, 'employee_code' => 'PRIVATE-EMP-2', 'name' => 'Dev Shah',
+            'user_id' => $privateUser->id, 'public_title' => 'Private profile', 'public_bio' => 'This profile is not public.', 'is_public' => false,
+        ]);
+        TeacherProfile::create([
+            'organization_id' => $organization->id, 'employee_code' => 'PRIVATE-EMP-3', 'name' => 'Inactive Teacher',
+            'user_id' => $suspendedUser->id, 'public_title' => 'Suspended account', 'is_public' => true,
+        ]);
+        $closedWorkspaceUser = User::factory()->create();
+        $inactiveOrganization->users()->attach($closedWorkspaceUser, ['role' => 'teacher', 'status' => 'active', 'joined_at' => now()]);
+        TeacherProfile::create([
+            'organization_id' => $inactiveOrganization->id, 'employee_code' => 'PRIVATE-EMP-4', 'name' => 'Closed School Teacher',
+            'user_id' => $closedWorkspaceUser->id, 'public_title' => 'Closed workspace', 'is_public' => true,
+        ]);
+
+        $this->getJson('/api/v1/catalog/educators?q=biology')->assertOk()->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.id', $publicProfile->id)->assertJsonPath('data.0.name', 'Asha Rao')
+            ->assertJsonPath('data.0.title', 'Biology educator')->assertJsonPath('data.0.organization_name', 'Public Educator Academy')
+            ->assertJsonMissing(['employee_code' => 'PRIVATE-EMP-1'])
+            ->assertJsonMissing(['email' => $publicUser->email, 'user_id' => $publicUser->id]);
+        $this->getJson('/api/v1/catalog/educators?q=closed')->assertOk()->assertJsonPath('meta.total', 0);
+    }
+
     public function test_course_manager_can_toggle_discovery_without_making_drafts_publicly_visible(): void
     {
         $organization = Organization::create(['name' => 'Catalog Workspace', 'slug' => 'catalog-workspace', 'type' => 'school', 'status' => 'active']);

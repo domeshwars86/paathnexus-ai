@@ -9,6 +9,7 @@ use App\Models\CourseOrder;
 use App\Models\Organization;
 use App\Models\StudentProfile;
 use App\Models\SubscriptionPlan;
+use App\Models\TeacherProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +58,37 @@ class PublicCatalogController extends Controller
             'description' => $plan->description, 'amount_paise' => $plan->amount_paise,
             'billing_interval' => $plan->billing_interval, 'entitlements' => $plan->entitlements ?? [],
         ])]);
+    }
+
+    public function educators(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['q' => ['nullable', 'string', 'max:100'], 'page' => ['nullable', 'integer', 'min:1']]);
+        $query = TeacherProfile::query()->where('status', 'active')->where('is_public', true)->whereNotNull('user_id')
+            ->whereHas('organization', fn ($organizations) => $organizations->where('status', 'active'))
+            ->whereHas('user', fn ($users) => $users->where('account_status', 'active'))
+            ->whereExists(fn ($members) => $members->selectRaw('1')->from('organization_user as educator_memberships')
+                ->whereColumn('educator_memberships.organization_id', 'teacher_profiles.organization_id')
+                ->whereColumn('educator_memberships.user_id', 'teacher_profiles.user_id')
+                ->where('educator_memberships.status', 'active')->where('educator_memberships.role', 'teacher'))
+            ->with('organization:id,name,slug,type')->orderBy('name');
+
+        if (! empty($validated['q'])) {
+            $term = mb_strtolower($validated['q']);
+            $query->where(function ($filter) use ($term): void {
+                $filter->whereRaw('LOWER(name) LIKE ?', ['%'.$term.'%'])
+                    ->orWhereRaw('LOWER(public_title) LIKE ?', ['%'.$term.'%'])
+                    ->orWhereRaw('LOWER(public_bio) LIKE ?', ['%'.$term.'%'])
+                    ->orWhereHas('organization', fn ($organizations) => $organizations->whereRaw('LOWER(name) LIKE ?', ['%'.$term.'%']));
+            });
+        }
+
+        $page = $query->paginate(12);
+
+        return response()->json(['data' => $page->getCollection()->map(fn (TeacherProfile $teacher): array => [
+            'id' => $teacher->id, 'name' => $teacher->name, 'title' => $teacher->public_title,
+            'bio' => $teacher->public_bio, 'organization_name' => $teacher->organization?->name,
+            'organization_slug' => $teacher->organization?->slug, 'organization_type' => $teacher->organization?->type,
+        ])->values(), 'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()]]);
     }
 
     public function enroll(Request $request, string $courseId): JsonResponse
