@@ -1065,6 +1065,10 @@ export async function lookupPlatformUser(token: string, email: string): Promise<
   return response.data;
 }
 
+export async function requestPlatformUserPasswordReset(token: string, userId: number): Promise<void> {
+  await request(`/platform/users/${userId}/password-reset`, { method: 'POST' }, token);
+}
+
 export async function listPlatformModeratableContent(token: string, type: PlatformModeratableContent['type'], query = '', page = 1): Promise<{ items: PlatformModeratableContent[]; total: number; page: number; lastPage: number }> {
   const search = new URLSearchParams({ type, page: String(page) });
   if (query.trim()) search.set('q', query.trim());

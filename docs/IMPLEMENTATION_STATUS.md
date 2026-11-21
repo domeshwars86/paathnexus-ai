@@ -2,12 +2,19 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.268 — Platform-assisted account recovery
+- **Finding:** Platform support could inspect account/workspace status but could not help an active user who had lost access.
+- **Fix:** Added a rate-limited, allowlist-only action on an exact-looked-up active account that requests a password-reset email through Laravel's existing broker. The link goes only to the account's registered email; the admin UI never receives the password or reset token. A metadata-only platform audit event records the request. Added English/Hindi UI copy and OpenAPI documentation.
+- **Verification:** Full Laravel suite passed (129 tests, 2,762 assertions); full Chromium suite passed (53 tests); Vitest passed (12 tests); TypeScript and production build passed. Focused recovery and OpenAPI tests passed.
+- **Limitations:** Link delivery depends on the configured mail transport. Local development uses the log mailer and does not deliver links to an inbox. Reset-link consumption remains the user's existing email workflow.
+- **Next:** Continue the remaining ERP, LMS and release-readiness backlog; hosted PostgreSQL verification and production mail/payment/AI integrations need external configuration.
+
 ## Milestone 0.267 — Moderate public course and educator listings
 - **Finding:** Publicly opted-in listings had no platform-level moderation path, and hiding them by changing tenant-owned fields would erase institution intent.
 - **Fix:** Added an allowlist-only platform review queue for active public courses and educator profiles, reversible hide/restore actions with optional notes, and platform audit events. Moderation state lives in a separate table; public discovery, educator summaries, free enrollment, paid order creation, and sandbox payment capture all enforce hidden state. Workspace-owned course/profile fields and existing learning records remain intact. Added English/Hindi admin UI and OpenAPI documentation.
 - **Verification:** Full Laravel suite passed (127 tests, 2,749 assertions); full Chromium suite passed (53 tests); Vitest passed (12 tests); TypeScript and production build passed. PHP syntax checks and the OpenAPI export check passed.
 - **Limitations:** Moderation only covers current, active public opt-in listings. It does not suspend a workspace or revoke existing enrollments/orders. Platform administration remains allowlist-configured; PostgreSQL lock behavior still requires hosted CI verification.
-- **Next:** Add account recovery/support actions, then continue the remaining ERP, LMS and release-readiness backlog.
+- **Next:** Add platform-assisted account recovery, then continue the remaining ERP, LMS and release-readiness backlog.
 
 ## Milestone 0.266 — Add audited platform account lookup
 - **Finding:** Platform admins could manage organizations and subscriptions but had no account lookup for support investigations.

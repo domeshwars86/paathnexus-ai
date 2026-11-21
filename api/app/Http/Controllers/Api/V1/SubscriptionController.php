@@ -11,6 +11,7 @@ use App\Services\PlatformUsageMetrics;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Validation\Rule;
 
 class SubscriptionController extends Controller
@@ -174,6 +175,16 @@ class SubscriptionController extends Controller
             'account_status' => $user->account_status, 'email_verified_at' => $user->email_verified_at?->toIso8601String(),
             'created_at' => $user->created_at?->toIso8601String(), 'workspaces' => $workspaces,
         ]]);
+    }
+
+    public function requestUserPasswordReset(Request $request, string $userId): JsonResponse
+    {
+        $this->requirePlatformAdmin($request);
+        $user = User::query()->whereKey($userId)->where('account_status', 'active')->firstOrFail();
+        PasswordBroker::sendResetLink(['email' => $user->email]);
+        $this->audit($request, 'platform.user_recovery_requested', 'user', (string) $user->id, ['action' => 'password_reset_link_requested']);
+
+        return response()->json(['message' => 'If the account is eligible, a password recovery link has been sent through the configured mail service.']);
     }
 
     public function updateOrganizationStatus(Request $request, string $organizationId): JsonResponse

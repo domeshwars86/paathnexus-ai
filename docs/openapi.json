@@ -9698,6 +9698,53 @@
                 }
             }
         },
+        "/platform/users/{userId}/password-reset": {
+            "post": {
+                "operationId": "postSubscriptionRequestUserPasswordResetPlatformUsersUserIdPasswordReset",
+                "summary": "Perform Request User Password Reset",
+                "description": "Request validation, response fields, capabilities, and tenant scope are documented in [API_SPECIFICATION.md](API_SPECIFICATION.md).",
+                "tags": [
+                    "Subscription"
+                ],
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiMessageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Error response. Status and field errors depend on the operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumBearer": []
+                    }
+                ]
+            }
+        },
         "/webhooks/payments/sandbox": {
             "post": {
                 "operationId": "postPaymentWebhookSandboxWebhooksPaymentsSandbox",

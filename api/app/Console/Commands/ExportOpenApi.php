@@ -2460,6 +2460,7 @@ class ExportOpenApi extends Command
             'api/v1/platform/organizations' => 'PlatformOrganizationsResponse',
             'api/v1/platform/audit-logs' => 'PlatformAuditLogsResponse',
             'api/v1/platform/users/lookup' => 'PlatformUserLookupResponse',
+            'api/v1/platform/users/{userId}/password-reset' => 'ApiMessageResponse',
             'api/v1/platform/content-moderation' => 'PlatformModeratableContentListResponse',
             'api/v1/platform/content-moderation/{type}/{contentId}' => 'PlatformModerationResponse',
             'api/v1/platform/usage' => 'PlatformUsageResponse',
@@ -2709,6 +2710,7 @@ class ExportOpenApi extends Command
                 'api/v1/organizations/{organizationId}/tasks/{taskId}/complete',
                 'api/v1/organizations/{organizationId}/tasks/{taskId}/restore',
                 'api/v1/organizations/{organizationId}/notifications/{notificationId}/read',
+                'api/v1/platform/users/{userId}/password-reset',
             ], true);
     }
 
@@ -2772,6 +2774,7 @@ class ExportOpenApi extends Command
             'api/v1/organizations/{organizationId}/courses/{courseId}/assignments/{assignmentId}/submissions/{submissionId}/grade',
             'api/v1/organizations/{organizationId}/courses/{courseId}/assignments/{assignmentId}/attachments',
             'api/v1/platform/users/lookup',
+            'api/v1/platform/users/{userId}/password-reset',
         ], true);
     }
 

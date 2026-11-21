@@ -942,6 +942,7 @@ test('platform admin sees aggregate usage and daily history for workspaces', asy
   let lookedUpEmail = '';
   let moderationStatus: 'visible' | 'hidden' = 'visible';
   let moderationReason: string | null = null;
+  let recoveryRequested = false;
   let aiTutorFlag = { key: 'ai_tutor', label: 'AI Tutor', description: 'Allow students and educators to use the workspace AI tutor.', enabled: true, default_enabled: true, updated_at: null, updated_by_id: null };
   await page.addInitScript(() => {
     sessionStorage.setItem('paathnexus.session-token', 'platform-admin-fixture-token');
@@ -960,6 +961,10 @@ test('platform admin sees aggregate usage and daily history for workspaces', asy
     if (path.endsWith('/platform/users/lookup') && route.request().method() === 'POST') {
       lookedUpEmail = (route.request().postDataJSON() as { email: string }).email;
       return send({ id: 42, name: 'Synthetic Learner', email: lookedUpEmail, account_status: 'active', email_verified_at: '2026-11-18T10:00:00Z', created_at: '2026-11-17T10:00:00Z', workspaces: [{ id: 'member-school', name: 'North Academy', slug: 'north-academy', organization_status: 'active', role: 'student', membership_status: 'active' }] });
+    }
+    if (path.endsWith('/platform/users/42/password-reset') && route.request().method() === 'POST') {
+      recoveryRequested = true;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'If the account is eligible, a password recovery link has been sent through the configured mail service.' }) });
     }
     if (path.includes('/platform/content-moderation/') && route.request().method() === 'PUT') {
       const update = route.request().postDataJSON() as { status: 'visible' | 'hidden'; reason: string | null };
@@ -1013,6 +1018,9 @@ test('platform admin sees aggregate usage and daily history for workspaces', asy
   await expect(page.getByText('Synthetic Learner')).toBeVisible();
   await expect(page.getByText('North Academy', { exact: true })).toBeVisible();
   expect(lookedUpEmail).toBe('learner@example.test');
+  await page.getByRole('button', { name: 'पासवर्ड रीसेट लिंक भेजें' }).click();
+  await expect(page.getByText('यदि खाता पात्र है, तो कॉन्फ़िगर की गई ईमेल सेवा से रिकवरी लिंक भेज दिया गया है।')).toBeVisible();
+  expect(recoveryRequested).toBe(true);
   await expect(page.getByText('सार्वजनिक सामग्री मॉडरेशन', { exact: true })).toBeVisible();
   await expect(page.getByText('Public Biology')).toBeVisible();
   await page.getByLabel('मॉडरेशन टिप्पणी').fill('नीति समीक्षा');

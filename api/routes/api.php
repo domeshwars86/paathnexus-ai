@@ -73,6 +73,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/platform/usage/history', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'usageHistory']);
         Route::get('/platform/organizations', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'organizations']);
         Route::post('/platform/users/lookup', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'lookupUser'])->middleware('throttle:10,1');
+        Route::post('/platform/users/{userId}/password-reset', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'requestUserPasswordReset'])
+            ->whereNumber('userId')->middleware('throttle:3,1');
         Route::get('/platform/content-moderation', [\App\Http\Controllers\Api\V1\PlatformContentModerationController::class, 'index']);
         Route::put('/platform/content-moderation/{type}/{contentId}', [\App\Http\Controllers\Api\V1\PlatformContentModerationController::class, 'update'])
             ->where('type', 'course|educator')->whereUuid('contentId');
