@@ -2,6 +2,13 @@
 
 Updated: 2026-11-21
 
+## Milestone 0.265 — Cancel one dated timetable lesson
+- **Finding:** Managers could cancel a whole class or section day, but the UI did not expose the API's support for canceling one weekly lesson on one date.
+- **Fix:** The dated cancellation form now offers only lessons matching the selected active academic year, class, section, and weekday. Selecting a lesson sends its timetable entry ID; the recurring timetable remains intact. The extra-lesson conflict check now distinguishes a single-lesson cancellation from a whole-day cancellation.
+- **Verification:** The full Laravel suite passed (122 tests, 2,684 assertions); the full Chromium suite passed (53 tests); Vitest passed (12 tests); and TypeScript/Vite production build passed. The ScheduleException regression proves the selected occurrence is omitted while another remains, and the Hindi browser workflow verifies the matching lesson selector.
+- **Limitations:** The control cancels one lesson on a date; it does not edit recurring timetable entries or create cancellations across a date range.
+- **Next:** Continue the remaining ERP, communication, AI, and release-readiness backlog; hosted PostgreSQL and production integrations need external configuration.
+
 ## Milestone 0.264 — Edit active dated schedule change details
 - **Finding:** Workspace managers could create and cancel closures, class cancellations, and extra lessons, but could not correct a title or note after creating one.
 - **Fix:** Added a tenant-scoped, row-locked update endpoint for title and notes on active exceptions. The schedule UI lets managers edit those display details; dates and schedule scope remain fixed after creation. Updated the OpenAPI schema and Hindi workflow.

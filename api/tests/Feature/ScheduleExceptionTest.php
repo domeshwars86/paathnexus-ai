@@ -103,6 +103,23 @@ class ScheduleExceptionTest extends TestCase
         $this->actingAs($owner, 'sanctum')->putJson($base.'/schedule-exceptions/'.$cancellation['id'], ['title' => 'Too late', 'notes' => null])->assertStatus(409);
         $this->assertDatabaseHas('schedule_exceptions', ['id' => $cancellation['id'], 'status' => 'cancelled']);
 
+        $targetLesson = TimetableEntry::create([
+            'organization_id' => $organization->id, 'class_id' => $class->id, 'section_id' => $section->id,
+            'academic_year_id' => $year->id, 'subject' => 'Laboratory', 'subject_id' => $subject->id,
+            'weekday' => 3, 'starts_at' => '14:00:00', 'ends_at' => '15:00:00',
+        ]);
+        $otherLesson = TimetableEntry::create([
+            'organization_id' => $organization->id, 'class_id' => $class->id, 'section_id' => $section->id,
+            'academic_year_id' => $year->id, 'subject' => 'Reading', 'subject_id' => $subject->id,
+            'weekday' => 3, 'starts_at' => '15:00:00', 'ends_at' => '16:00:00',
+        ]);
+        $this->actingAs($owner, 'sanctum')->postJson($base.'/schedule-exceptions', [
+            'academic_year_id' => $year->id, 'exception_date' => '2026-11-18', 'type' => 'cancel',
+            'title' => 'Lab moved', 'class_id' => $class->id, 'section_id' => $section->id, 'timetable_entry_id' => $targetLesson->id,
+        ])->assertCreated()->assertJsonPath('data.timetable_entry_id', $targetLesson->id);
+        $this->actingAs($learner, 'sanctum')->getJson($base.'/student/dashboard')->assertOk()
+            ->assertJsonMissing(['id' => $targetLesson->id])->assertJsonFragment(['id' => $otherLesson->id]);
+
         $outsideYear = $this->actingAs($owner, 'sanctum')->postJson($base.'/schedule-exceptions', [
             'academic_year_id' => $year->id, 'exception_date' => '2027-04-01', 'type' => 'closure', 'title' => 'Outside year',
         ]);

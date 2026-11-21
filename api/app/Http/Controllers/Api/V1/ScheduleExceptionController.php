@@ -164,7 +164,7 @@ class ScheduleExceptionController extends Controller
             ->whereNotNull('timetable_entry_id')->pluck('timetable_entry_id');
         $classDayCancellation = ScheduleException::query()->where('organization_id', $organization->id)->where('academic_year_id', $year->id)
             ->whereDate('exception_date', $date->toDateString())->where('type', 'cancel')->where('status', 'active')
-            ->where('class_id', $class->id)->where(function ($query) use ($data): void {
+            ->whereNull('timetable_entry_id')->where('class_id', $class->id)->where(function ($query) use ($data): void {
                 $query->whereNull('section_id');
                 if (! empty($data['section_id'])) $query->orWhere('section_id', $data['section_id']);
             })->exists();

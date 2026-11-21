@@ -321,6 +321,8 @@ test('academic timetable and dated schedule controls are localized in Hindi work
       pending_tasks_count: 0, latest_attendance_rate: null, latest_attendance_class: null, latest_attendance_date: null,
       attendance_series: [], classes: [], today_schedule: [], schedule_notice: null, schedule_weekday: 1, active_academic_year_id: null,
     });
+    if (path.endsWith('/classes')) return send([{ id: 'class-8', name: 'Class 8', grade: '8', section: null, student_count: 0, can_attend_whole: true, assigned_section_ids: [] }]);
+    if (path.endsWith('/sections')) return send([]);
     if (path.endsWith('/academic-years')) return send([{ id: 'hindi-year', name: '2026–27', starts_on: '2026-04-01', ends_on: '2027-03-31', status: 'active' }]);
     if (path.endsWith('/timetable-entries')) return send([{
       id: 'hindi-friday-lesson', academic_year_id: 'hindi-year', academic_year: '2026–27', class_id: 'class-8', class_name: 'Class 8',
@@ -361,6 +363,13 @@ test('academic timetable and dated schedule controls are localized in Hindi work
   await editForm.getByRole('button', { name: 'विवरण सहेजें' }).click();
   await expect(page.locator('.schedule-exception-row')).toContainText('संशोधित विज्ञान पाठ');
   await expect(page.locator('.schedule-exception-row')).toContainText('नई जानकारी');
+  const addForm = page.locator('.schedule-exception-form').filter({ hasText: 'तारीख़ का बदलाव जोड़ें' });
+  await addForm.getByLabel('बदलाव का प्रकार').selectOption('cancel');
+  await addForm.getByLabel('तारीख़').fill('2026-11-20');
+  await addForm.locator('label').filter({ hasText: 'कक्षा चुनें' }).locator('select').selectOption('class-8');
+  const lessonChoice = addForm.getByLabel('विशिष्ट पाठ (वैकल्पिक)');
+  await expect(lessonChoice).toContainText('Science · 10:00–10:45');
+  await lessonChoice.selectOption('hindi-friday-lesson');
 });
 
 test('workspace search opens a matching announcement in the manager view', async ({ page }) => {
@@ -665,7 +674,7 @@ test('workspace managers can configure narrowed admin and educator profiles', as
   });
 
   await page.goto('/');
-  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Custom member roles' })).toBeVisible();
   await expectNoHorizontalOverflow(page);
   const memberType = page.getByLabel('Member type');
