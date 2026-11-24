@@ -51,6 +51,7 @@ export async function assignCustomTeacherRole(token: string, organizationId: str
 export type User = { name: string; email: string; is_platform_admin?: boolean };
 export type SubscriptionPlan = { id: string; code: string; name: string; audience: 'all' | 'institution' | 'educator'; description: string | null; amount_paise: number | null; billing_interval: 'month' | 'year' | 'custom'; entitlements: Record<string, number | null>; is_active: boolean };
 export type PublicCourse = { id: string; code: string; title: string; description: string | null; amount_paise: number; organization_name: string | null; organization_slug: string | null; organization_type: string | null; subject: string | null; lesson_count: number; instructors: { name: string; title: string | null; bio: string | null }[] };
+export type CourseOrderRecord = { id: string; course_id: string; organization_id: string; amount_paise: number; status: 'pending' | 'paid' | 'expired'; expires_at: string | null; paid_at: string | null };
 export type PublicEducator = { id: string; name: string; title: string | null; bio: string | null; organization_name: string | null; organization_slug: string | null; organization_type: string | null };
 export type PublicPlan = Omit<SubscriptionPlan, 'is_active'>;
 export type WorkspaceSubscription = { status: 'active' | 'change_pending'; plan: SubscriptionPlan; requested_plan: SubscriptionPlan | null; requested_at: string | null; available_plans: SubscriptionPlan[] };
@@ -489,6 +490,21 @@ export async function getPublicEducator(educatorId: string): Promise<PublicEduca
 
 export async function enrollPublicCourse(token: string, courseId: string): Promise<{ id: string; course_id: string; course_title: string; organization_id: string; organization_name: string; status: 'active'; enrolled_at: string | null }> {
   const response = await request<{ data: { id: string; course_id: string; course_title: string; organization_id: string; organization_name: string; status: 'active'; enrolled_at: string | null } }>(`/catalog/courses/${encodeURIComponent(courseId)}/enroll`, { method: 'POST' }, token);
+  return response.data;
+}
+
+export async function createPublicCourseOrder(token: string, courseId: string): Promise<CourseOrderRecord> {
+  const response = await request<{ data: CourseOrderRecord; checkout_mode: 'sandbox' }>(`/catalog/courses/${encodeURIComponent(courseId)}/orders`, { method: 'POST' }, token);
+  return response.data;
+}
+
+export async function getCourseOrder(token: string, orderId: string): Promise<CourseOrderRecord> {
+  const response = await request<{ data: CourseOrderRecord }>(`/catalog/course-orders/${encodeURIComponent(orderId)}`, {}, token);
+  return response.data;
+}
+
+export async function simulateSandboxCourseCapture(token: string, orderId: string): Promise<CourseOrderRecord> {
+  const response = await request<{ data: CourseOrderRecord; checkout_mode: 'sandbox' }>(`/catalog/course-orders/${encodeURIComponent(orderId)}/sandbox-capture`, { method: 'POST' }, token);
   return response.data;
 }
 

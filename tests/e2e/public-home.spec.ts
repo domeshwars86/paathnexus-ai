@@ -922,6 +922,56 @@ test('learner AI tutor remains accessible after switching workspaces', async ({ 
   await expect(page.getByText('student workspace', { exact: true })).toBeVisible();
 });
 
+test('learner can complete a local sandbox course checkout without claiming a real payment', async ({ page }) => {
+  const organizationId = 'f27d504d-a4c3-48cb-9a9e-5d45d2e2cd74';
+  const courseId = 'c85ad57b-07d4-4f50-aad4-1e1e9ac3c792';
+  const orderId = '0a8cd116-f403-4680-896a-5bf4a96034b1';
+  const course = { id: courseId, code: 'BIO-PAID', title: 'Biology foundations', description: 'A public paid course.', amount_paise: 12550, organization_id: organizationId, organization_name: 'Sample Academy', subject: 'Biology', lesson_count: 4, instructors: [] };
+  let orderPaid = false;
+  await page.addInitScript(() => {
+    sessionStorage.setItem('paathnexus.session-token', 'sandbox-checkout-fixture-token');
+    sessionStorage.setItem('paathnexus.active-organization', 'sandbox-checkout-workspace');
+  });
+  await page.route('**/api/v1/**', async (route) => {
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    const method = route.request().method();
+    const send = (data: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ data }) });
+    if (path.endsWith('/auth/me')) return send({
+      user: { name: 'Asha Learner', email: 'learner@example.test' },
+      organizations: [{ id: organizationId, name: 'Sample Academy', slug: 'sample-academy', type: 'school', role: 'student', permissions: ['*'], locale: 'en', timezone: 'Asia/Kolkata' }],
+    });
+    if (path.endsWith('/student/dashboard')) return send({ student: null, study_recommendations: [], courses: [], assignments: [], assessment_results: [], today_schedule: [], schedule_notice: null, attendance: { sessions_recorded: 0, present_or_late: 0, rate_percent: null, recent: [] } });
+    if (path.endsWith('/notifications')) return send({ notifications: [], unread_count: 0 });
+    if (path.endsWith('/catalog/courses')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [course], meta: { total: 1, current_page: 1, last_page: 1 } }) });
+    if (path.endsWith(`/catalog/courses/${courseId}/orders`) && method === 'POST') return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ data: courseOrder('pending'), checkout_mode: 'sandbox' }) });
+    if (path.endsWith(`/catalog/course-orders/${orderId}/sandbox-capture`) && method === 'POST') {
+      orderPaid = true;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: courseOrder('paid'), checkout_mode: 'sandbox' }) });
+    }
+    if (path.endsWith(`/catalog/course-orders/${orderId}`)) return send(courseOrder(orderPaid ? 'paid' : 'pending'));
+    return send([]);
+  });
+
+  function courseOrder(status: 'pending' | 'paid') {
+    return { id: orderId, course_id: courseId, organization_id: organizationId, amount_paise: 12550, status, expires_at: '2026-12-01T12:00:00+00:00', paid_at: status === 'paid' ? '2026-11-21T12:00:00+00:00' : null };
+  }
+
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Discover courses' }).click();
+  const card = page.getByRole('article').filter({ hasText: 'Biology foundations' });
+  await expect(card).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Open learning workspace' })).toHaveCount(0);
+  await card.getByRole('button', { name: 'Start sandbox checkout' }).click();
+  await expect(card.getByText('Sandbox checkout only. No real payment will be collected.')).toBeVisible();
+  await expect(card.getByRole('group', { name: 'Sandbox course checkout' }).getByText('Sandbox order pending', { exact: true })).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Open learning workspace' })).toHaveCount(0);
+  await card.getByRole('button', { name: 'Simulate sandbox payment' }).click();
+  await expect(card.getByRole('button', { name: 'Open learning workspace' })).toBeVisible();
+  await expect(card.getByRole('group', { name: 'Sandbox course checkout' }).getByText('Sandbox payment captured')).toBeVisible();
+  await expect(card.getByText('Sandbox checkout only. No real payment will be collected.')).toBeVisible();
+});
+
 test('learner can complete a lesson and submit a quiz using isolated API fixtures', async ({ page }) => {
   const organizationId = 'org-fixture';
   const courseId = 'course-fixture';

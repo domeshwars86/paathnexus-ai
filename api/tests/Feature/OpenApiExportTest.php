@@ -54,6 +54,7 @@ class OpenApiExportTest extends TestCase
         foreach ([
             '/catalog/courses/{courseId}/enroll',
             '/catalog/courses/{courseId}/orders',
+            '/catalog/course-orders/{orderId}/sandbox-capture',
             '/organizations/{organizationId}/academic-years/{yearId}/activate',
             '/organizations/{organizationId}/announcements/{announcementId}/restore',
             '/organizations/{organizationId}/announcements/{announcementId}/withdraw',

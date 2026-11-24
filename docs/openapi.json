@@ -76,6 +76,9 @@
             "name": "Public Catalog"
         },
         {
+            "name": "Sandbox Course Checkout"
+        },
+        {
             "name": "Schedule Exception"
         },
         {
@@ -583,6 +586,53 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/CourseOrderResponse"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Error response. Status and field errors depend on the operation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumBearer": []
+                    }
+                ]
+            }
+        },
+        "/catalog/course-orders/{orderId}/sandbox-capture": {
+            "post": {
+                "operationId": "postSandboxCourseCheckoutCaptureCatalogCourseOrdersOrderIdSandboxCapture",
+                "summary": "Perform Capture",
+                "description": "Request validation, response fields, capabilities, and tenant scope are documented in [API_SPECIFICATION.md](API_SPECIFICATION.md).",
+                "tags": [
+                    "Sandbox Course Checkout"
+                ],
+                "parameters": [
+                    {
+                        "name": "orderId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CourseOrderCheckoutResponse"
                                 }
                             }
                         }

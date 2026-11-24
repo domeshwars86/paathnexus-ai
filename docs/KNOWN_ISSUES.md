@@ -1,5 +1,7 @@
 # Known issues and limitations
 
+- Public paid-course checkout now has an opt-in local sandbox demo only. It creates synthetic signed captures and does not move funds. The API default is `PAYMENT_GATEWAY=disabled`; a real payment-provider checkout, reconciliation/webhooks, educator payouts, and provider credentials still need implementation and external setup.
+
 - The locked Composer dependency audit is configured in both API CI jobs. A local audit found no advisories; hosted CI confirmation is pending.
 - API liveness (`/api/v1/health`) and database readiness (`/api/v1/health/ready`) are separate. The Render blueprint now uses database readiness, which does not probe queues, object storage, mail, AI, payments, or conferencing. The free-plan blueprint does not automate schema migrations; deployment operators must follow `docs/DEPLOYMENT.md` before releases with pending migrations.
 - CI now runs a fresh migration, rollback, and re-application smoke on disposable SQLite and PostgreSQL databases. The SQLite sequence passed locally; the PostgreSQL job remains pending hosted CI execution.

@@ -89,6 +89,39 @@ class CourseCheckoutTest extends TestCase
         $this->assertDatabaseCount('course_enrollments', 0);
     }
 
+    public function test_local_sandbox_checkout_uses_signed_webhook_capture_and_cannot_run_elsewhere(): void
+    {
+        config(['services.payments.gateway' => 'sandbox', 'services.payments.sandbox_webhook_secret' => 'course-test-secret']);
+        [$organization, $course, $studentUser, $student] = $this->context();
+        $created = $this->actingAs($studentUser, 'sanctum')->postJson('/api/v1/catalog/courses/'.$course->id.'/orders')->assertCreated();
+        $orderId = $created->json('data.id');
+        $captureUrl = '/api/v1/catalog/course-orders/'.$orderId.'/sandbox-capture';
+
+        $this->actingAs($studentUser, 'sanctum')->postJson($captureUrl)->assertNotFound();
+        $this->assertDatabaseHas('course_orders', ['id' => $orderId, 'status' => 'pending']);
+        $this->assertDatabaseCount('course_enrollments', 0);
+
+        config(['app.env' => 'local']);
+        $capture = $this->actingAs($studentUser, 'sanctum')->postJson($captureUrl)->assertOk()
+            ->assertJsonPath('checkout_mode', 'sandbox')->assertJsonPath('data.status', 'paid');
+        $this->assertSame($orderId, $capture->json('data.id'));
+        $this->actingAs($studentUser, 'sanctum')->postJson($captureUrl)->assertOk()
+            ->assertJsonPath('checkout_mode', 'sandbox')->assertJsonPath('data.status', 'paid');
+
+        $this->assertDatabaseHas('course_orders', [
+            'id' => $orderId, 'organization_id' => $organization->id, 'status' => 'paid',
+            'provider' => 'sandbox', 'provider_event_id' => 'local-course-order-'.$orderId,
+            'transaction_reference' => 'LOCAL-SANDBOX-'.$orderId,
+        ]);
+        $this->assertDatabaseHas('course_enrollments', [
+            'organization_id' => $organization->id, 'course_id' => $course->id,
+            'student_id' => $student->id, 'status' => 'active', 'enrolled_by' => $studentUser->id,
+        ]);
+        $this->assertDatabaseHas('payment_webhook_events', ['event_id' => 'local-course-order-'.$orderId, 'course_order_id' => $orderId]);
+        $this->assertDatabaseCount('payment_webhook_events', 1);
+        $this->assertDatabaseCount('course_enrollments', 1);
+    }
+
     public function test_moderating_a_course_after_order_creation_prevents_capture_and_enrollment(): void
     {
         config(['services.payments.gateway' => 'sandbox', 'services.payments.sandbox_webhook_secret' => 'course-test-secret']);

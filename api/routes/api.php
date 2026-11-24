@@ -57,6 +57,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/catalog/courses/{courseId}/enroll', [\App\Http\Controllers\Api\V1\PublicCatalogController::class, 'enroll'])->whereUuid('courseId');
         Route::post('/catalog/courses/{courseId}/orders', [\App\Http\Controllers\Api\V1\PublicCatalogController::class, 'createCourseOrder'])->whereUuid('courseId')->middleware('throttle:10,1');
         Route::get('/catalog/course-orders/{orderId}', [\App\Http\Controllers\Api\V1\PublicCatalogController::class, 'showCourseOrder'])->whereUuid('orderId');
+        Route::post('/catalog/course-orders/{orderId}/sandbox-capture', [\App\Http\Controllers\Api\V1\SandboxCourseCheckoutController::class, 'capture'])->whereUuid('orderId');
         Route::get('/organizations', [\App\Http\Controllers\Api\V1\OrganizationController::class, 'index']);
         Route::post('/organizations', [\App\Http\Controllers\Api\V1\OrganizationController::class, 'store']);
         Route::get('/organizations/{organizationId}/subscription', [\App\Http\Controllers\Api\V1\SubscriptionController::class, 'show'])

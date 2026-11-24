@@ -1,6 +1,13 @@
 # Implementation status
 
-Updated: 2026-11-21
+Updated: 2026-11-24
+
+## Milestone 0.284 — Add local sandbox checkout for public paid courses
+- **Finding:** The API already supported idempotent sandbox course orders and signed payment capture, but the student marketplace could not start or complete an order.
+- **Fix:** Added an authenticated, local-environment-only capture action that creates a synthetic HMAC-signed event and delegates to the existing webhook capture path. The marketplace can create/resume orders, check status, and simulate capture only in Vite development mode; enrollment appears only after the API confirms payment. The interface labels the flow as sandbox-only and says no real payment is collected. Documented the opt-in local gateway configuration and added the route to OpenAPI.
+- **Verification:** Production build passed. All 60 Chromium tests and 12 Vitest tests passed. The full Laravel suite passed (131 tests, 2,805 assertions), including the local-only restriction, idempotent capture, enrollment, moderation/expiry behavior, and OpenAPI contract. OpenAPI was regenerated and `php artisan openapi:export --check` passed; controller and route PHP syntax checks passed.
+- **Limitations:** No real payment provider UI, provider credentials, or funds movement are implemented. The local sandbox is disabled by default (`PAYMENT_GATEWAY=disabled`) and must be explicitly configured for a local demo. PostgreSQL concurrency and hosted CI remain unverified.
+- **Next:** Continue remaining ERP/LMS gaps and release-readiness work, including hosted PostgreSQL and deployment verification.
 
 ## Milestone 0.283 — Localize course workflow fallback errors
 - **Finding:** Course authoring forms were translated, but generic fallback messages for course loading, progress, assignment uploads/submissions, grading, and attachment downloads could still surface in English.
